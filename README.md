@@ -10,7 +10,7 @@ Tested plattforms: PC - I have no idea if this is going to work on Quest or Linu
 
 ### Install
 
-Click on releases, download the dll from the latest release and place it in your plugins folder. I'll be trying to get this on ModAssistant if no major issues should arise.
+Click on [releases](https://github.com/kinsi55/CS_BeatSaber_GottaGoFast/releases), download the dll from the latest release and place it in your plugins folder. I'll be trying to get this on ModAssistant if no major issues should arise.
 
 ### Config
 
