@@ -8,6 +8,10 @@ Currently compatible game versions: **1.12/1.13 *and* 1.11**
 
 Tested plattforms: PC - I have no idea if this is going to work on Quest or Linux, let me know I guess? :)
 
+### Install
+
+Click on releases, download the dll from the latest release and place it in your plugins folder. I'll be trying to get this on ModAssistant if no major issues should arise.
+
 ### Config
 
 - `SongStartTransition`: Transition time when starting a song (Game default is 0.7)
