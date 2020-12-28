@@ -22,6 +22,14 @@ Tested plattforms: PC - I have no idea if this is going to work on Quest or Linu
 
 **ℹ If you use the shortened `SongPassFailTransition` you can remove the FastFail mod as this results in a fail transition so short that FastFail doesnt even kick in**
 
+### Benchmark / Comparison:
+
+Game on SSD / R9 3900x CPU, time until seeing the first frame after pressing the button
+
+- Song load: 500ms (Default: 2.1 Seconds)
+- Song restart: 475ms (Default: 2.7 Seconds)
+- Song exit to menu: 175ms (Default: 1.1 Seconds)
+
 ### Known issues / Caveats
 
 - For now the shortened transition times do not apply for Multiplayer as I had no idea if this would cause any negative effects. Other optimizations are active.
@@ -29,3 +37,7 @@ Tested plattforms: PC - I have no idea if this is going to work on Quest or Linu
 ### Incompatible mods
 
 None that I've found so far - As mentioned above running FastFail alongside this isnt really necessary
+
+#### Shoutout to BSMG general Chat for the help
+
+![Kek](https://i.imgur.com/eWN3UQB.png)
