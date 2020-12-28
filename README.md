@@ -26,9 +26,11 @@ Tested plattforms: PC - I have no idea if this is going to work on Quest or Linu
 
 Game on SSD / R9 3900x CPU, time until seeing the first frame after pressing the button
 
-- Song load: 500ms (Default: 2.1 Seconds)
+- First song load after game start: 500ms (Default: 2.1 Seconds, Subsequent ones should be slightly faster in both cases)
 - Song restart: 475ms (Default: 2.7 Seconds)
 - Song exit to menu: 175ms (Default: 1.1 Seconds)
+
+List of mods: BeatSaver Loader / Voting, Camera+, ChatCore, Chroma, Counters+, CustomNotes, CustomSaber, HitSoundChanger, IntroSkip, MappingExtensions, NoodleExtensions, ParticleOverdrive, PP Counter for Counters+, RumbleMod, ScorePercentage, ScoreSaber, SongBrowser / SongCore / SongDataCore / SongPlayHistory, SRM
 
 ### Known issues / Caveats
 
