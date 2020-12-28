@@ -83,7 +83,7 @@ namespace GottaGoFast {
 		static bool weAreInMenu = false;
 
 		static byte gcInterval = 5; //Maybe config this idk
-		static byte gcSkipCounter = 0;
+		static byte gcSkipCounter = 1;
 
 		public void OnActiveSceneChanged(Scene oldScene, Scene newScene) {
 #if DEBUG
