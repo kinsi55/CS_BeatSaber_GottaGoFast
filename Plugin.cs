@@ -62,20 +62,22 @@ namespace GottaGoFast {
 				transpiler: new HarmonyMethod(typeof(PatchLevelStartTransition).GetMethod("Transpiler", BindingFlags.NonPublic | BindingFlags.Static))
 			);
 
-			var enumeratorFn = AccessTools.FirstInner(typeof(GameScenesManager), t => t.Name.StartsWith("<ScenesTransitionCoroutine"))?.GetMethod("MoveNext", BindingFlags.NonPublic | BindingFlags.Instance);
-			
-			if(enumeratorFn == null) {
-				Log.Warn("Unable to patch GameScenesManager, couldnt find method");
-				return;
+			if(Configuration.PluginConfig.Instance.EnableOptimizations) {
+				var enumeratorFn = AccessTools.FirstInner(typeof(GameScenesManager), t => t.Name.StartsWith("<ScenesTransitionCoroutine"))?.GetMethod("MoveNext", BindingFlags.NonPublic | BindingFlags.Instance);
+
+				if(enumeratorFn == null) {
+					Log.Warn("Unable to patch GameScenesManager, couldnt find method");
+					return;
+				}
+
+				harmony.Patch(
+					enumeratorFn,
+					transpiler: new HarmonyMethod(typeof(PatchGameScenesManager).GetMethod("Transpiler", BindingFlags.NonPublic | BindingFlags.Static))
+				);
+				Log.Info("Patched GameScenesManager");
+
+				SceneManager.activeSceneChanged += OnActiveSceneChanged;
 			}
-
-			harmony.Patch(
-				enumeratorFn,
-				transpiler: new HarmonyMethod(typeof(PatchGameScenesManager).GetMethod("Transpiler", BindingFlags.NonPublic | BindingFlags.Static))
-			);
-			Log.Info("Patched GameScenesManager");
-
-			SceneManager.activeSceneChanged += OnActiveSceneChanged;
 		}
 
 

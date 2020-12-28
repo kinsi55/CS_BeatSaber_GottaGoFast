@@ -14,6 +14,7 @@ Tested plattforms: PC - I have no idea if this is going to work on Quest or Linu
 - `SongRestartTransition`: Transition time when restarting a song (Game default is 0.35)
 - `SongPassFailTransition`: Transition time when having failed or passed a song (Game default is 1.3)
 - `RemoveHealthWarning`: When true skips the Health warning and just goes straight into the main menu
+- `EnableOptimizations`: Can be used to disable the deeper optimizations of this plugin that go beyond shortening transitons incase you happen to encounter issues.
 
 **⚠️ If you happen to find the sudden scene changes to be nauseating you should probably increase `SongStartTransition` and `SongRestartTransition` a bit**
 
