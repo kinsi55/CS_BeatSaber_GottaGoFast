@@ -15,6 +15,7 @@ Click on [releases](https://github.com/kinsi55/CS_BeatSaber_GottaGoFast/releases
 - `SongStartTransition`: Transition time when starting a song (Game default is 0.7)
 - `SongRestartTransition`: Transition time when restarting a song (Game default is 0.35)
 - `SongPassFailTransition`: Transition time when having failed or passed a song (Game default is 1.3)
+- `SongFailDisplayTime`: Duration to display the "Level Failed" screen (Game default is 2)
 - `RemoveHealthWarning`: When true skips the Health warning and just goes straight into the main menu
 - `EnableOptimizations`: Can be used to disable the deeper optimizations of this plugin that go beyond shortening transitons incase you happen to encounter issues.
 
