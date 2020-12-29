@@ -10,8 +10,6 @@ using System.Diagnostics;
 
 namespace GottaGoFast.HarmonyPatches {
 	
-	//[HarmonyPatch()]
-	//[HarmonyPatch("MoveNext")]
 	class PatchGameScenesManager {
 		public static bool skipGc = false;
 

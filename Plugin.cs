@@ -63,7 +63,7 @@ namespace GottaGoFast {
 			);
 
 			if(Configuration.PluginConfig.Instance.EnableOptimizations) {
-				var enumeratorFn = AccessTools.FirstInner(typeof(GameScenesManager), t => t.Name.StartsWith("<ScenesTransitionCoroutine"))?.GetMethod("MoveNext", BindingFlags.NonPublic | BindingFlags.Instance);
+				var enumeratorFn = Helper.getCoroutine(typeof(GameScenesManager), "ScenesTransitionCoroutine");
 
 				if(enumeratorFn == null) {
 					Log.Warn("Unable to patch GameScenesManager, couldnt find method");
@@ -78,13 +78,31 @@ namespace GottaGoFast {
 
 				SceneManager.activeSceneChanged += OnActiveSceneChanged;
 			}
+
+			var enumeratorFn2 = Helper.getCoroutine(typeof(StandardLevelFailedController), "LevelFailedCoroutine");
+
+			if(enumeratorFn2 != null) {
+				harmony.Patch(
+					enumeratorFn2,
+					transpiler: new HarmonyMethod(typeof(PatchStandardLevelFailedController).GetMethod("Transpiler", BindingFlags.NonPublic | BindingFlags.Static))
+				);
+			}
+
+			enumeratorFn2 = Helper.getCoroutine(typeof(MissionLevelFailedController), "LevelFailedCoroutine");
+
+			if(enumeratorFn2 != null) {
+				harmony.Patch(
+					enumeratorFn2,
+					transpiler: new HarmonyMethod(typeof(PatchMissionLevelFailedController).GetMethod("Transpiler", BindingFlags.NonPublic | BindingFlags.Static))
+				);
+			}
 		}
 
 
 		static CancellationTokenSource gcClearCancel;
 		static bool weAreInMenu = false;
 
-		static byte gcInterval = 5; //Maybe config this idk
+		static byte gcInterval = 6; //Maybe config this idk
 		static byte gcSkipCounter = 1;
 
 		public void OnActiveSceneChanged(Scene oldScene, Scene newScene) {
@@ -107,12 +125,20 @@ namespace GottaGoFast {
 
 				if(weAreInMenu && (gcSkipCounter++ % gcInterval) == 0)
 					PatchGameScenesManager.skipGc = false;
+#if DEBUG
+				Log.Notice(String.Format("gcSkipCounter: {0}", gcSkipCounter));
+#endif
 			} else if(newScene.name == GameSceneName) {
-				weAreInMenu = false;
-				PatchGameScenesManager.skipGc = true;
+				preventNextGc();
 				// Not sure if BS does this by itself (I'm assuming yes?) but it cant hurt to go sure
 				GarbageCollector.GCMode = GarbageCollector.Mode.Disabled;
 			}
+		}
+
+		public static void preventNextGc() {
+			gcClearCancel?.Cancel();
+			PatchGameScenesManager.skipGc = true;
+			weAreInMenu = false;
 		}
 
 		[OnExit]

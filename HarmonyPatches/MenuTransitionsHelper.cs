@@ -8,10 +8,7 @@ namespace GottaGoFast.HarmonyPatches {
 
 	// This only patches the main game transitions as I'm unsure if it would have an impact on MP.
 
-	//[HarmonyPatch(typeof(MenuTransitionsHelper))]
-	//[HarmonyPatch("StartStandardLevel", 
-	//	new Type[] { typeof(Action<DiContainer> afterSceneSwitchCallback), typeof(IDifficultyBeatmap), typeof(OverrideEnvironmentSettings), typeof(ColorScheme), typeof(GameplayModifiers), typeof(PlayerSpecificSettings), typeof(PracticeSettings), typeof(string), typeof(bool), typeof(Action), typeof(Action<DiContainer>), typeof(Action<StandardLevelScenesTransitionSetupDataSO, LevelCompletionResults>) }
-	//)]
+	//Patched manually in Init because of the function being overloaded
 	class PatchLevelStartTransition {
 		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
 			if(
@@ -37,13 +34,27 @@ namespace GottaGoFast.HarmonyPatches {
 		}
 	}
 
-	static class Helper {
-		public static bool patchDelay(CodeInstruction instruction, float expectedValue, float newValue = 0f) {
-			if(instruction.opcode == OpCodes.Ldc_R4 && (float)instruction.operand == expectedValue) {
-				instruction.operand = newValue;
-				return true;
-			}
-			return false;
+	[HarmonyPatch(typeof(MenuTransitionsHelper))]
+	[HarmonyPatch("StartMissionLevel")]
+	class PatchMissionStartTransition {
+		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
+			if(Helper.patchDelay(instructions.ElementAt(30), 0.7f, Configuration.PluginConfig.Instance.SongStartTransition))
+				Plugin.Log.Info("Patched mission start transition time");
+
+			return instructions;
+		}
+	}
+
+	[HarmonyPatch(typeof(MenuTransitionsHelper))]
+	[HarmonyPatch("HandleMissionLevelSceneDidFinish")]
+	class PatchMissionRestartTransition {
+		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
+			if(Helper.patchDelay(instructions.ElementAt(25), 0.35f, Configuration.PluginConfig.Instance.SongRestartTransition))
+				Plugin.Log.Info("Patched mission restart transition time");
+			if(Helper.patchDelay(instructions.ElementAt(27), 1.3f, Configuration.PluginConfig.Instance.SongPassFailTransition))
+				Plugin.Log.Info("Patched mission clear / fail transition time");
+
+			return instructions;
 		}
 	}
 
