@@ -18,7 +18,7 @@ namespace GottaGoFast {
 		}
 
 		public static MethodInfo getCoroutine(Type targetClass, string coroutineName, string method = "MoveNext") {
-			var enumeratorFn = AccessTools.FirstInner(targetClass, t => t.Name.StartsWith("<" + coroutineName))?.GetMethod("method", BindingFlags.NonPublic | BindingFlags.Instance);
+			var enumeratorFn = AccessTools.FirstInner(targetClass, t => t.Name.StartsWith("<" + coroutineName))?.GetMethod(method, BindingFlags.NonPublic | BindingFlags.Instance);
 
 			return enumeratorFn;
 		}

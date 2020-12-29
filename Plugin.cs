@@ -67,16 +67,15 @@ namespace GottaGoFast {
 
 				if(enumeratorFn == null) {
 					Log.Warn("Unable to patch GameScenesManager, couldnt find method");
-					return;
+				} else {
+					harmony.Patch(
+						enumeratorFn,
+						transpiler: new HarmonyMethod(typeof(PatchGameScenesManager).GetMethod("Transpiler", BindingFlags.NonPublic | BindingFlags.Static))
+					);
+					Log.Info("Patched GameScenesManager");
+
+					SceneManager.activeSceneChanged += OnActiveSceneChanged;
 				}
-
-				harmony.Patch(
-					enumeratorFn,
-					transpiler: new HarmonyMethod(typeof(PatchGameScenesManager).GetMethod("Transpiler", BindingFlags.NonPublic | BindingFlags.Static))
-				);
-				Log.Info("Patched GameScenesManager");
-
-				SceneManager.activeSceneChanged += OnActiveSceneChanged;
 			}
 
 			var enumeratorFn2 = Helper.getCoroutine(typeof(StandardLevelFailedController), "LevelFailedCoroutine");

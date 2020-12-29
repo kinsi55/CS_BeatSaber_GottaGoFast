@@ -3,7 +3,7 @@
 	"id": "GottaGoFast",
 	"name": "Gotta Go Fast",
 	"author": "Kinsi55",
-	"version": "0.0.2",
+	"version": "0.0.3",
 	"description": "Significantly decreases the time it takes to (re)start songs",
 	"gameVersion": "1.11",
 	"dependsOn": {
