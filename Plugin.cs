@@ -15,11 +15,14 @@ using GottaGoFast.HarmonyPatches;
 using UnityEngine.Scripting;
 using System.Threading.Tasks;
 using System.Threading;
+using BeatSaberMarkupLanguage.Settings;
 
 namespace GottaGoFast {
 
 	[Plugin(RuntimeOptions.SingleStartInit)]
 	public class Plugin {
+		public const string HarmonyId = "Kinsi55.BeatSaber.GottaGoFast";
+
 		public const string MenuSceneName = "MenuViewControllers";
 		public const string GameSceneName = "GameCore";
 		public const string ContextSceneName = "GameplayCore";
@@ -35,26 +38,20 @@ namespace GottaGoFast {
 		/// [Init] methods that use a Constructor or called before regular methods like InitWithConfig.
 		/// Only use [Init] with one Constructor.
 		/// </summary>
-		public void Init(IPALogger logger) {
+		public void Init(IPALogger logger, Config conf) {
 			Instance = this;
 			Log = logger;
 			Log.Info("Gotta Go Fast initialized.");
-		}
-
-		#region BSIPA Config
-		[Init]
-		public void InitWithConfig(Config conf) {
+			
 			Configuration.PluginConfig.Instance = conf.Generated<Configuration.PluginConfig>();
-			Log.Debug("Config loaded");
 		}
-		#endregion
 
 		[OnStart]
 		public void OnApplicationStart() {
 			Log.Debug("OnApplicationStart");
 			new GameObject("GottaGoFastController").AddComponent<GottaGoFastController>();
 
-			harmony = new Harmony("Kinsi55.BeatSaber.GottaGoFast");
+			harmony = new Harmony(HarmonyId);
 			harmony.PatchAll(Assembly.GetExecutingAssembly());
 
 			harmony.Patch(
@@ -97,6 +94,18 @@ namespace GottaGoFast {
 			}
 		}
 
+		#region Disableable
+		[OnEnable]
+		public void OnEnable() {
+			BSMLSettings.instance.AddSettingsMenu("Gotta Go Fast", "GottaGoFast.Views.settings.bsml", Configuration.PluginConfig.Instance);
+		}
+
+		[OnDisable]
+		public void OnDisable() {
+			harmony.UnpatchAll(HarmonyId);
+		}
+		#endregion
+
 
 		static CancellationTokenSource gcClearCancel;
 		static bool weAreInMenu = false;
@@ -113,12 +122,10 @@ namespace GottaGoFast {
 			if(newScene.name == MenuSceneName) {
 				gcClearCancel = new CancellationTokenSource();
 				Task.Delay(1000, gcClearCancel.Token).ContinueWith(t => {
-					if(gcClearCancel.IsCancellationRequested == true)
-						return;
-
 					weAreInMenu = true;
+					enteredMenu();
 					PatchGameScenesManager.skipGc = true;
-				});
+				}, gcClearCancel.Token);
 			} else if(oldScene.name == MenuSceneName) {
 				gcClearCancel?.Cancel();
 
@@ -131,7 +138,13 @@ namespace GottaGoFast {
 				preventNextGc();
 				// Not sure if BS does this by itself (I'm assuming yes?) but it cant hurt to go sure
 				GarbageCollector.GCMode = GarbageCollector.Mode.Disabled;
+
+				RestartLagBandaid.songStarted((Resources.FindObjectsOfTypeAll<MultiplayerController>().LastOrDefault() != null));
 			}
+		}
+
+		public static void enteredMenu() {
+			RestartLagBandaid.reset();
 		}
 
 		public static void preventNextGc() {

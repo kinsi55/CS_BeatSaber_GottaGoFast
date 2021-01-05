@@ -42,6 +42,12 @@
     <DisableZipRelease>True</DisableZipRelease>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="BeatmapCore">
+      <HintPath>E:\SteamLibrary\steamapps\common\Beat Saber\Beat Saber_Data\Managed\BeatmapCore.dll</HintPath>
+    </Reference>
+    <Reference Include="BSML">
+      <HintPath>E:\SteamLibrary\steamapps\common\Beat Saber\Plugins\BSML.dll</HintPath>
+    </Reference>
     <Reference Include="GameplayCore">
       <HintPath>E:\SteamLibrary\steamapps\common\Beat Saber\Beat Saber_Data\Managed\GameplayCore.dll</HintPath>
     </Reference>
@@ -103,6 +109,7 @@
     <Compile Include="HarmonyPatches\MenuTransitionsHelper.cs" />
     <Compile Include="HarmonyPatches\ResultsViewController.cs" />
     <Compile Include="Helper.cs" />
+    <Compile Include="RestartLagBandaid.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Configuration\PluginConfig.cs" />
     <Compile Include="GottaGoFastController.cs" />
@@ -114,6 +121,7 @@
   <ItemGroup>
     <None Include="Directory.Build.props" Condition="Exists('Directory.Build.props')" />
     <None Include="Directory.Build.targets" Condition="Exists('Directory.Build.targets')" />
+    <EmbeddedResource Include="Views\settings.bsml" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="BeatSaberModdingTools.Tasks">

@@ -12,6 +12,8 @@ namespace GottaGoFast.Configuration {
 		public virtual bool RemoveHealthWarning { get; set; } = true;
 		public virtual bool EnableOptimizations { get; set; } = true;
 
+		public virtual float SongRestartAntiLagDelay { get; set; } = 0f;
+
 		/// <summary>
 		/// This is called whenever BSIPA reads the config from disk (including when file changes are detected).
 		/// </summary>

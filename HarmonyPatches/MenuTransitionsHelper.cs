@@ -11,10 +11,7 @@ namespace GottaGoFast.HarmonyPatches {
 	//Patched manually in Init because of the function being overloaded
 	class PatchLevelStartTransition {
 		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
-			if(
-				Helper.patchDelay(instructions.ElementAt(31), 0.7f, Configuration.PluginConfig.Instance.SongStartTransition) || //1.12
-				Helper.patchDelay(instructions.ElementAt(30), 0.7f, Configuration.PluginConfig.Instance.SongStartTransition) //1.11
-			)
+			if(Helper.patchDelay(instructions.ElementAt(31), 0.7f, Configuration.PluginConfig.Instance.SongStartTransition))
 				Plugin.Log.Info("Patched map start transition time");
 
 			return instructions;
