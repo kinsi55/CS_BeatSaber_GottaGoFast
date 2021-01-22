@@ -3,9 +3,9 @@
 	"id": "GottaGoFast",
 	"name": "Gotta Go Fast",
 	"author": "Kinsi55",
-	"version": "0.0.4",
+	"version": "0.0.5",
 	"description": "Significantly decreases the time it takes to (re)start songs",
-	"gameVersion": "1.12.2",
+	"gameVersion": "1.13.2",
 	"dependsOn": {
 		"BSIPA": "^4.0.5"
 	},
