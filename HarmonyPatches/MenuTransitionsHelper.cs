@@ -3,18 +3,28 @@ using System.Collections.Generic;
 using System.Linq;
 using HarmonyLib;
 using System.Reflection.Emit;
+using System.Reflection;
 
 namespace GottaGoFast.HarmonyPatches {
 
 	// This only patches the main game transitions as I'm unsure if it would have an impact on MP.
-
-	//Patched manually in Init because of the function being overloaded
+	
+	[HarmonyPatch]
 	class PatchLevelStartTransition {
 		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
 			if(Helper.patchDelay(instructions.ElementAt(31), 0.7f, Configuration.PluginConfig.Instance.SongStartTransition))
 				Plugin.Log.Info("Patched map start transition time");
 
 			return instructions;
+		}
+
+		static void Prefix() {
+			PatchGameScenesManager.isStartingSong = true;
+		}
+
+		[HarmonyTargetMethod]
+		static MethodBase TargetMethod() {
+			return typeof(MenuTransitionsHelper).GetMethods().Where(x => x.Name == "StartStandardLevel").ElementAt(1);
 		}
 	}
 

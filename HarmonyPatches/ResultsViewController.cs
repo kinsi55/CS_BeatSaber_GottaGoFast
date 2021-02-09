@@ -7,12 +7,12 @@ using System.Threading.Tasks;
 
 namespace GottaGoFast.HarmonyPatches {
 
-	[HarmonyPatch(typeof(ResultsViewController))]
-	[HarmonyPatch("RestartButtonPressed")]
-	class PatchResultsViewController {
-		static bool Prefix() {
-			Plugin.preventNextGc();
-			return true;
-		}
-	}
+	//[HarmonyPatch(typeof(ResultsViewController))]
+	//[HarmonyPatch("RestartButtonPressed")]
+	//class PatchResultsViewController {
+	//	static bool Prefix() {
+	//		//Plugin.preventNextGc();
+	//		return true;
+	//	}
+	//}
 }

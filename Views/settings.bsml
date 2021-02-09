@@ -1,11 +1,6 @@
 ﻿<settings-container>
 	<horizontal horizontal-fit="PreferredSize">
-		<slider-setting apply-on-change="true" value="SongRestartAntiLagDelay" text="Restart Anti-Lag Pause"
-						hover-hint="Pauses for this amount of seconds after restarting a song to work around lag spikes. 0.7 is a good starting point"
-						min="0" max="1.5" increment="0.1"></slider-setting>
-	</horizontal>
-	<horizontal horizontal-fit="PreferredSize">
-		<text text='The following settings require a Game restart to apply' align='Center'></text>
+		<text text='The settings require a Game restart to apply' align='Center'></text>
 	</horizontal>
 	<horizontal horizontal-fit="PreferredSize">
 		<checkbox-setting apply-on-change="true" value="RemoveHealthWarning" text="Remove Health warning"
@@ -15,7 +10,7 @@
 	<horizontal horizontal-fit="PreferredSize">
 		<slider-setting apply-on-change="true" value="SongStartTransition" text="Song start transition"
 						hover-hint="Transition time when starting a song"
-						min="0" max="0.7" increment="0.05"></slider-setting>
+						min="0.1" max="0.7" increment="0.05"></slider-setting>
 	</horizontal>
 	<horizontal horizontal-fit="PreferredSize">
 		<slider-setting apply-on-change="true" value="SongRestartTransition" text="Song restart transition"

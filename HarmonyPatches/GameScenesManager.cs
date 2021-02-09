@@ -7,6 +7,7 @@ using UnityEngine.Scripting;
 using UnityEngine;
 using System.Reflection;
 using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace GottaGoFast.HarmonyPatches {
 	
@@ -39,9 +40,47 @@ namespace GottaGoFast.HarmonyPatches {
 			return list.AsEnumerable();
 		}
 
+		static byte gcInterval = 5; //Maybe config this idk
+		static byte gcSkipCounterGame = 1;
+		static byte gcSkipCounterMenu = 3;
+
+		static bool wasInSong = false;
+		public static bool isRestartingSong = false;
+		public static bool isStartingSong = false;
+
+		static bool isInSong = false;
+
 		public static void __PostFix() {
-			if(!skipGc)
-				DoGc();
+			if(isRestartingSong) {
+				if(isStartingSong)
+					isRestartingSong = isStartingSong = false;
+				return;
+			}
+
+			if(!wasInSong && isStartingSong) {
+				wasInSong = true;
+				return;
+			} else if(isInSong && Plugin.currentScene.name != "GameCore" && Plugin.currentScene.name != "EmptyTransition") {
+				GarbageCollector.GCMode = GarbageCollector.Mode.Enabled;
+				isInSong = false;
+				if(gcSkipCounterMenu++ % gcInterval != 0) return;
+				Plugin.Log.Info("Running GC because Leaving song");
+				//return;
+				// The second condition is a failsafe
+			} else if((isStartingSong && Plugin.currentScene.name == "EmptyTransition") || (!isInSong && Plugin.currentScene.name == "GameCore")) {
+				GarbageCollector.GCMode = GarbageCollector.Mode.Disabled;
+				isStartingSong = false;
+				isInSong = true;
+				wasInSong = true;
+				if(gcSkipCounterGame++ % gcInterval != 0) return;
+				Plugin.Log.Info("Running GC because Starting song");
+				//return;
+			} else if(wasInSong) {
+				return;
+			}
+
+
+			DoGc();
 		}
 
 		public static void DoGc() {
@@ -53,19 +92,35 @@ namespace GottaGoFast.HarmonyPatches {
 
 			GarbageCollector.GCMode = GarbageCollector.Mode.Enabled;
 			GC.Collect();
-#if DEBUG
-			Plugin.Log.Notice(String.Format("Gc took {0}ms", sw.ElapsedMilliseconds));
-			sw.Restart();
-#endif
+			if(isInSong)
+				GarbageCollector.GCMode = GarbageCollector.Mode.Disabled;
+			//#if DEBUG
+			//			Plugin.Log.Notice(String.Format("GC took {0}ms", sw.ElapsedMilliseconds));
+			//			sw.Restart();
+			//#endif
+			return;
 
-#if DEBUG
 			Resources.UnloadUnusedAssets().completed += delegate {
-				sw.Stop();
-				Plugin.Log.Notice(String.Format("Cleanup took {0}ms", sw.ElapsedMilliseconds));
-			};
-#else
-			Resources.UnloadUnusedAssets();
+				Task.Delay(50).ContinueWith(x => {
+#if DEBUG
+					sw.Restart();
 #endif
+					//https://forum.unity.com/threads/resources-unloadunusedassets-vs-gc-collect.358597/
+					//  "liortal's guess is correct, Resources.UnloadUnusedAssets is indeed calling GC.Collect inside. 
+					// So if you already calling Resources.UnloadUnusedAssets, you shouldn't call GC.Collect"
+					//GC.Collect();
+#if DEBUG
+					Plugin.Log.Notice(String.Format("GC(2) took {0}ms", sw.ElapsedMilliseconds));
+					sw.Stop();
+#endif
+					// Disable GC while ingame to prevent GC lag spikes
+					if(isInSong)
+						GarbageCollector.GCMode = GarbageCollector.Mode.Disabled;
+				});
+#if DEBUG
+				Plugin.Log.Notice(String.Format("Cleanup took {0}ms", sw.ElapsedMilliseconds));
+#endif
+			};
 		}
 	}
 }

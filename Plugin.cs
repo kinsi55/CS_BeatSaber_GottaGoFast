@@ -16,16 +16,13 @@ using UnityEngine.Scripting;
 using System.Threading.Tasks;
 using System.Threading;
 using BeatSaberMarkupLanguage.Settings;
+using System.Runtime.CompilerServices;
 
 namespace GottaGoFast {
 
 	[Plugin(RuntimeOptions.SingleStartInit)]
 	public class Plugin {
 		public const string HarmonyId = "Kinsi55.BeatSaber.GottaGoFast";
-
-		public const string MenuSceneName = "MenuViewControllers";
-		public const string GameSceneName = "GameCore";
-		public const string ContextSceneName = "GameplayCore";
 
 		internal static Plugin Instance { get; private set; }
 		internal static IPALogger Log { get; private set; }
@@ -52,12 +49,6 @@ namespace GottaGoFast {
 			new GameObject("GottaGoFastController").AddComponent<GottaGoFastController>();
 
 			harmony = new Harmony(HarmonyId);
-			harmony.PatchAll(Assembly.GetExecutingAssembly());
-
-			harmony.Patch(
-				typeof(MenuTransitionsHelper).GetMethods().Where(x => x.Name == "StartStandardLevel").ElementAt(1),
-				transpiler: new HarmonyMethod(typeof(PatchLevelStartTransition).GetMethod("Transpiler", BindingFlags.NonPublic | BindingFlags.Static))
-			);
 
 			if(Configuration.PluginConfig.Instance.EnableOptimizations) {
 				var enumeratorFn = Helper.getCoroutine(typeof(GameScenesManager), "ScenesTransitionCoroutine");
@@ -74,83 +65,29 @@ namespace GottaGoFast {
 					SceneManager.activeSceneChanged += OnActiveSceneChanged;
 				}
 			}
-
-			var enumeratorFn2 = Helper.getCoroutine(typeof(StandardLevelFailedController), "LevelFailedCoroutine");
-
-			if(enumeratorFn2 != null) {
-				harmony.Patch(
-					enumeratorFn2,
-					transpiler: new HarmonyMethod(typeof(PatchStandardLevelFailedController).GetMethod("Transpiler", BindingFlags.NonPublic | BindingFlags.Static))
-				);
-			}
-
-			enumeratorFn2 = Helper.getCoroutine(typeof(MissionLevelFailedController), "LevelFailedCoroutine");
-
-			if(enumeratorFn2 != null) {
-				harmony.Patch(
-					enumeratorFn2,
-					transpiler: new HarmonyMethod(typeof(PatchMissionLevelFailedController).GetMethod("Transpiler", BindingFlags.NonPublic | BindingFlags.Static))
-				);
-			}
 		}
 
 		#region Disableable
 		[OnEnable]
 		public void OnEnable() {
 			BSMLSettings.instance.AddSettingsMenu("Gotta Go Fast", "GottaGoFast.Views.settings.bsml", Configuration.PluginConfig.Instance);
+			harmony.PatchAll(Assembly.GetExecutingAssembly());
 		}
 
 		[OnDisable]
 		public void OnDisable() {
+			BSMLSettings.instance.RemoveSettingsMenu(Configuration.PluginConfig.Instance);
 			harmony.UnpatchAll(HarmonyId);
 		}
 		#endregion
-
-
-		static CancellationTokenSource gcClearCancel;
-		static bool weAreInMenu = false;
-
-		static byte gcInterval = 6; //Maybe config this idk
-		static byte gcSkipCounter = 1;
+		
+		public static Scene currentScene;
 
 		public void OnActiveSceneChanged(Scene oldScene, Scene newScene) {
 #if DEBUG
-			Log.Info(String.Format("SWITCHED SCENE {2}: {0} -> {1}", oldScene.name, newScene.name, DateTimeOffset.Now.ToUnixTimeMilliseconds()));
+			Log.Warn($"{oldScene.name} -> {newScene.name}");
 #endif
-
-			// We'll allow the heavy stuff to run until we've gotten into the main menu
-			if(newScene.name == MenuSceneName) {
-				gcClearCancel = new CancellationTokenSource();
-				Task.Delay(1000, gcClearCancel.Token).ContinueWith(t => {
-					weAreInMenu = true;
-					enteredMenu();
-					PatchGameScenesManager.skipGc = true;
-				}, gcClearCancel.Token);
-			} else if(oldScene.name == MenuSceneName) {
-				gcClearCancel?.Cancel();
-
-				if(weAreInMenu && (gcSkipCounter++ % gcInterval) == 0)
-					PatchGameScenesManager.skipGc = false;
-#if DEBUG
-				Log.Notice(String.Format("gcSkipCounter: {0}", gcSkipCounter));
-#endif
-			} else if(newScene.name == GameSceneName) {
-				preventNextGc();
-				// Not sure if BS does this by itself (I'm assuming yes?) but it cant hurt to go sure
-				GarbageCollector.GCMode = GarbageCollector.Mode.Disabled;
-
-				RestartLagBandaid.songStarted((Resources.FindObjectsOfTypeAll<MultiplayerController>().LastOrDefault() != null));
-			}
-		}
-
-		public static void enteredMenu() {
-			RestartLagBandaid.reset();
-		}
-
-		public static void preventNextGc() {
-			gcClearCancel?.Cancel();
-			PatchGameScenesManager.skipGc = true;
-			weAreInMenu = false;
+			currentScene = newScene;
 		}
 
 		[OnExit]

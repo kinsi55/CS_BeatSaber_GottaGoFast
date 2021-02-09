@@ -25,6 +25,7 @@
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <Optimize>true</Optimize>
@@ -105,11 +106,11 @@
   <ItemGroup>
     <Compile Include="HarmonyPatches\DefaultScenesTransitionsFromInit.cs" />
     <Compile Include="HarmonyPatches\GameScenesManager.cs" />
+    <Compile Include="HarmonyPatches\HookRestart.cs" />
     <Compile Include="HarmonyPatches\LevelFailController.cs" />
     <Compile Include="HarmonyPatches\MenuTransitionsHelper.cs" />
     <Compile Include="HarmonyPatches\ResultsViewController.cs" />
     <Compile Include="Helper.cs" />
-    <Compile Include="RestartLagBandaid.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Configuration\PluginConfig.cs" />
     <Compile Include="GottaGoFastController.cs" />
