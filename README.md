@@ -18,7 +18,6 @@ Click on [releases](https://github.com/kinsi55/CS_BeatSaber_GottaGoFast/releases
 - `SongFailDisplayTime`: Duration to display the "Level Failed" screen (Game default is 2)
 - `RemoveHealthWarning`: When true skips the Health warning and just goes straight into the main menu
 - `EnableOptimizations`: Can be used to disable the deeper optimizations of this plugin that go beyond shortening transitons incase you happen to encounter issues.
-- `SongRestartAntiLagDelay`: Depending on your setup / mods its possible you consistently experience lag in the beginning of songs when restarting, if that is the case you can add a small delay (How much you need depends on your setup) after restarts using this setting to wait for the lag spikes to pass before actually starting the song.
 
 **⚠️ If you happen to find the sudden scene changes to be nauseating you should probably increase `SongStartTransition` and `SongRestartTransition` a bit**
 
