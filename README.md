@@ -38,7 +38,6 @@ List of mods: BeatSaver Loader / Voting, Camera+, ChatCore, Chroma, Counters+, C
 ### Known issues / Caveats
 
 - For now the shortened transition times do not apply for Multiplayer as I had no idea if this would cause any negative effects. Other optimizations are active.
-- With some setups / combinations of mods its possible you experience lag in the beginning of songs when restarting a song, use the `SongRestartAntiLagDelay` setting to work around this
 - Rarely the game will appear to be extremely jittery, simply restarting the song fixes this. I'm not exactly sure what the cause is of this yet.
 
 ### Incompatible mods
