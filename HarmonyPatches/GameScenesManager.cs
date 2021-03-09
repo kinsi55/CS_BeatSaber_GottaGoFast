@@ -92,12 +92,18 @@ namespace GottaGoFast.HarmonyPatches {
 
 			GarbageCollector.GCMode = GarbageCollector.Mode.Enabled;
 			GC.Collect();
-			if(isInSong)
-				GarbageCollector.GCMode = GarbageCollector.Mode.Disabled;
-			//#if DEBUG
-			//			Plugin.Log.Notice(String.Format("GC took {0}ms", sw.ElapsedMilliseconds));
-			//			sw.Restart();
-			//#endif
+
+			if(isInSong) {
+				GC.WaitForPendingFinalizers();
+
+				if(!IPA.Loader.PluginManager.EnabledPlugins.Any(x => x.Name == "Runtime Unity Editor (BSIPA)"))
+					GarbageCollector.GCMode = GarbageCollector.Mode.Disabled;
+			}
+#if DEBUG
+			Plugin.Log.Notice(String.Format("GC took {0}ms", sw.ElapsedMilliseconds));
+			sw.Restart();
+#endif
+
 			return;
 
 			Resources.UnloadUnusedAssets().completed += delegate {

@@ -12,7 +12,7 @@ namespace GottaGoFast.HarmonyPatches {
 	[HarmonyPatch]
 	class PatchLevelStartTransition {
 		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
-			if(Helper.patchDelay(instructions.ElementAt(31), 0.7f, Configuration.PluginConfig.Instance.SongStartTransition))
+			if(Helper.patchDelay(instructions.ElementAt(32), 0.7f, Configuration.PluginConfig.Instance.SongStartTransition))
 				Plugin.Log.Info("Patched map start transition time");
 
 			return instructions;
@@ -45,7 +45,7 @@ namespace GottaGoFast.HarmonyPatches {
 	[HarmonyPatch("StartMissionLevel")]
 	class PatchMissionStartTransition {
 		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
-			if(Helper.patchDelay(instructions.ElementAt(30), 0.7f, Configuration.PluginConfig.Instance.SongStartTransition))
+			if(Helper.patchDelay(instructions.ElementAt(31), 0.7f, Configuration.PluginConfig.Instance.SongStartTransition))
 				Plugin.Log.Info("Patched mission start transition time");
 
 			return instructions;

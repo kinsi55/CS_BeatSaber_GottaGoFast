@@ -5,14 +5,12 @@ using IPA.Config.Stores;
 namespace GottaGoFast.Configuration {
 	internal class PluginConfig {
 		public static PluginConfig Instance { get; set; }
-		public virtual float SongStartTransition { get; set; } = 0.3f;
+		public virtual float SongStartTransition { get; set; } = 0.1f;
 		public virtual float SongRestartTransition { get; set; } = 0.1f;
 		public virtual float SongPassFailTransition { get; set; } = 0.6f;
 		public virtual float SongFailDisplayTime { get; set; } = 0.5f;
 		public virtual bool RemoveHealthWarning { get; set; } = true;
 		public virtual bool EnableOptimizations { get; set; } = true;
-
-		public virtual float SongRestartAntiLagDelay { get; set; } = 0f;
 
 		/// <summary>
 		/// This is called whenever BSIPA reads the config from disk (including when file changes are detected).
@@ -26,8 +24,6 @@ namespace GottaGoFast.Configuration {
 		/// </summary>
 		public virtual void Changed() {
 			// Do stuff when the config is changed.
-			if(SongStartTransition <= 0.1f)
-				SongStartTransition = 0.3f;
 
 		}
 
