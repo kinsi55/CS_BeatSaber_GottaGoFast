@@ -94,8 +94,6 @@ namespace GottaGoFast.HarmonyPatches {
 			GC.Collect();
 
 			if(isInSong) {
-				GC.WaitForPendingFinalizers();
-
 				if(!IPA.Loader.PluginManager.EnabledPlugins.Any(x => x.Name == "Runtime Unity Editor (BSIPA)"))
 					GarbageCollector.GCMode = GarbageCollector.Mode.Disabled;
 			}
