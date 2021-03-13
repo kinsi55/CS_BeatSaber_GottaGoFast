@@ -50,6 +50,14 @@ namespace GottaGoFast.HarmonyPatches {
 
 		static bool isInSong = false;
 
+		static void IsInSong() {
+			if(!IPA.Loader.PluginManager.EnabledPlugins.Any(x => x.Name == "Runtime Unity Editor (BSIPA)")) {
+				GarbageCollector.GCMode = GarbageCollector.Mode.Disabled;
+			} else {
+				GarbageCollector.GCMode = GarbageCollector.Mode.Enabled;
+			}
+		}
+
 		public static void __PostFix() {
 			if(isRestartingSong) {
 				if(isStartingSong)
@@ -68,7 +76,8 @@ namespace GottaGoFast.HarmonyPatches {
 				//return;
 				// The second condition is a failsafe
 			} else if((isStartingSong && Plugin.currentScene.name == "EmptyTransition") || (!isInSong && Plugin.currentScene.name == "GameCore")) {
-				GarbageCollector.GCMode = GarbageCollector.Mode.Disabled;
+				IsInSong();
+
 				isStartingSong = false;
 				isInSong = true;
 				wasInSong = true;
@@ -93,10 +102,9 @@ namespace GottaGoFast.HarmonyPatches {
 			GarbageCollector.GCMode = GarbageCollector.Mode.Enabled;
 			GC.Collect();
 
-			if(isInSong) {
-				if(!IPA.Loader.PluginManager.EnabledPlugins.Any(x => x.Name == "Runtime Unity Editor (BSIPA)"))
-					GarbageCollector.GCMode = GarbageCollector.Mode.Disabled;
-			}
+			if(isInSong)
+				IsInSong();
+
 #if DEBUG
 			Plugin.Log.Notice(String.Format("GC took {0}ms", sw.ElapsedMilliseconds));
 			sw.Restart();
