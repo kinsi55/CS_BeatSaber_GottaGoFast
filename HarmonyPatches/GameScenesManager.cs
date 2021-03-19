@@ -14,12 +14,12 @@ namespace GottaGoFast.HarmonyPatches {
 	class PatchGameScenesManager {
 		public static bool skipGc = false;
 
-		private static OpCode[] expectedOpcodes = { OpCodes.Ldc_I4_1, OpCodes.Call, OpCodes.Call, OpCodes.Call, OpCodes.Pop };
+		private static OpCode[] expectedOpcodes = { OpCodes.Call, OpCodes.Call, OpCodes.Pop };
 		private static int patchOffset = 408;
 
 		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
-			if(instructions.Count() < 413) {
-				Plugin.Log.Warn(String.Format("Couldn't patch GameScenesManager, expected at least 413 OpCodes, found {0}", instructions.Count()));
+			if(instructions.Count() < patchOffset + expectedOpcodes.Length + 1) {
+				Plugin.Log.Warn(String.Format("Couldn't patch GameScenesManager, expected at least {1} OpCodes, found {0}", instructions.Count(), patchOffset + expectedOpcodes.Length + 1));
 				return instructions;
 			}
 
@@ -51,10 +51,10 @@ namespace GottaGoFast.HarmonyPatches {
 		static bool isInSong = false;
 
 		static void IsInSong() {
-			if(!IPA.Loader.PluginManager.EnabledPlugins.Any(x => x.Name == "Runtime Unity Editor (BSIPA)")) {
-				GarbageCollector.GCMode = GarbageCollector.Mode.Disabled;
-			} else {
+			if(IPA.Loader.PluginManager.EnabledPlugins.Any(x => x.Name == "Runtime Unity Editor (BSIPA)")) {
 				GarbageCollector.GCMode = GarbageCollector.Mode.Enabled;
+			} else {
+				GarbageCollector.GCMode = GarbageCollector.Mode.Disabled;
 			}
 		}
 
@@ -99,7 +99,7 @@ namespace GottaGoFast.HarmonyPatches {
 			sw.Start();
 #endif
 
-			GarbageCollector.GCMode = GarbageCollector.Mode.Enabled;
+			//GarbageCollector.GCMode = GarbageCollector.Mode.Enabled;
 			GC.Collect();
 
 			if(isInSong)
