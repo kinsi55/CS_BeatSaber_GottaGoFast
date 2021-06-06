@@ -10,41 +10,75 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace GottaGoFast.HarmonyPatches {
-	
-	class PatchGameScenesManager {
+	[HarmonyPatch]
+	static class PatchGameScenesManager {
 		public static bool skipGc = false;
 
-		private static OpCode[] expectedOpcodes = { OpCodes.Call, OpCodes.Call, OpCodes.Pop };
 		private static int patchOffset = 408;
 
 		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
-			if(instructions.Count() < patchOffset + expectedOpcodes.Length + 1) {
-				Plugin.Log.Warn(String.Format("Couldn't patch GameScenesManager, expected at least {1} OpCodes, found {0}", instructions.Count(), patchOffset + expectedOpcodes.Length + 1));
+			if(!Configuration.PluginConfig.Instance.EnableOptimizations) {
+				Plugin.Log.Info("Not patching GameScenesManager because optimizations are disabled");
+				return instructions;
+			}
+
+			var yeetAmount = 0;
+
+			// 1.16.2
+			if(Helper.CheckIL(instructions, new Dictionary<int, OpCode>() {
+				{ patchOffset, OpCodes.Call },
+				{ 409, OpCodes.Stloc_3 },
+				{ patchOffset + 14, OpCodes.Call }
+			}) && (instructions.ElementAt(418).opcode == OpCodes.Leave || instructions.ElementAt(418).opcode == OpCodes.Leave_S)) {
+				yeetAmount = 15;
+			// <1.16.1
+			} else if(Helper.CheckIL(instructions, new Dictionary<int, OpCode>() {
+				{ patchOffset, OpCodes.Call },
+				{ patchOffset + 1, OpCodes.Call },
+				{ patchOffset + 2, OpCodes.Pop },
+				{ patchOffset + 3, OpCodes.Call }
+			})) {
+				yeetAmount = 3;
+
+				// For 1.16.1 specificall we also need to yeet the shaderwarmup
+				if(IPA.Utilities.UnityGame.GameVersion.ToString() == "1.16.1") {
+					Plugin.Log.Info("Yeeting ShaderWarmup because we are on 1.16.1");
+					yeetAmount = 4;
+				}
+			} else {
+				Plugin.Log.Warn("Couldn't patch GameScenesManager, unexpected existing OpCodes");
 				return instructions;
 			}
 
 			var list = instructions.ToList();
+			var labels = new List<Label>();
 
-			for(int i = 0; i < expectedOpcodes.Length; i++) {
-				if(list[i + patchOffset].opcode != expectedOpcodes[i]) {
-					Plugin.Log.Warn(String.Format("Couldn't patch GameScenesManager, expected IL {0} at {1}, found {2}", expectedOpcodes[i], i + patchOffset, list[i + patchOffset].opcode));
-					return instructions;
-				}
+			for(var i = patchOffset; i < patchOffset + yeetAmount; i++) {
+				if(list[i].labels.Count > 0)
+					labels.AddRange(list[i].labels);
 			}
 
-			list.RemoveRange(patchOffset, expectedOpcodes.Length);
+			list.RemoveRange(patchOffset, yeetAmount);
 
-			list.Insert(patchOffset, new CodeInstruction(OpCodes.Call, typeof(PatchGameScenesManager).GetMethod("__PostFix", BindingFlags.Static | BindingFlags.Public)));
-			list[patchOffset].labels = instructions.ElementAt(patchOffset).labels;
+			var inst = new CodeInstruction(OpCodes.Call, typeof(PatchGameScenesManager).GetMethod("__PostFix", BindingFlags.Static | BindingFlags.Public));
+
+			inst.labels.AddRange(labels.Distinct());
+
+			list.Insert(patchOffset, inst);
+
+			Plugin.Log.Info("Patched GameScenesManager");
 
 			return list.AsEnumerable();
 		}
+
+		[HarmonyTargetMethod]
+		static MethodBase TargetMethod() => Helper.getCoroutine(typeof(GameScenesManager), "ScenesTransitionCoroutine");
 
 		static byte gcInterval = 5; //Maybe config this idk
 		static byte gcSkipCounterGame = 1;
 		static byte gcSkipCounterMenu = 3;
 
-		static bool wasInSong = false;
+		//static bool wasInSong = false;
 		public static bool isRestartingSong = false;
 		public static bool isStartingSong = false;
 
@@ -56,6 +90,7 @@ namespace GottaGoFast.HarmonyPatches {
 			} else {
 				GarbageCollector.GCMode = GarbageCollector.Mode.Disabled;
 			}
+			Application.backgroundLoadingPriority = ThreadPriority.Low;
 		}
 
 		public static void __PostFix() {
@@ -65,34 +100,38 @@ namespace GottaGoFast.HarmonyPatches {
 				return;
 			}
 
-			if(!wasInSong && isStartingSong) {
-				wasInSong = true;
-				return;
-			} else if(isInSong && Plugin.currentScene.name != "GameCore" && Plugin.currentScene.name != "EmptyTransition") {
+			bool unload = false;
+
+			var YES = Plugin.currentScene.name;
+
+			if(isInSong && YES != "GameCore" && YES != "EmptyTransition") {
 				GarbageCollector.GCMode = GarbageCollector.Mode.Enabled;
 				isInSong = false;
+				Application.backgroundLoadingPriority = ThreadPriority.High;
 				if(gcSkipCounterMenu++ % gcInterval != 0) return;
 				Plugin.Log.Info("Running GC because Leaving song");
 				//return;
 				// The second condition is a failsafe
-			} else if((isStartingSong && Plugin.currentScene.name == "EmptyTransition") || (!isInSong && Plugin.currentScene.name == "GameCore")) {
+			} else if((isStartingSong && (YES == "EmptyTransition" || YES == "GameCore")) || (!isInSong && YES == "GameCore")) {
 				IsInSong();
 
 				isStartingSong = false;
 				isInSong = true;
-				wasInSong = true;
 				if(gcSkipCounterGame++ % gcInterval != 0) return;
 				Plugin.Log.Info("Running GC because Starting song");
+
+				// This was kind of an experiment to see if it helps with memory usage, doesnt look like it.
+				//unload = true;
 				//return;
-			} else if(wasInSong) {
+			} else {
 				return;
 			}
 
 
-			DoGc();
+			DoGc(unload);
 		}
 
-		public static void DoGc() {
+		public static void DoGc(bool doUnload) {
 #if DEBUG
 			Plugin.Log.Notice("Running GC / Cleanup...");
 			var sw = new Stopwatch();
@@ -109,8 +148,8 @@ namespace GottaGoFast.HarmonyPatches {
 			Plugin.Log.Notice(String.Format("GC took {0}ms", sw.ElapsedMilliseconds));
 			sw.Restart();
 #endif
-
-			return;
+			if(!doUnload)
+				return;
 
 			Resources.UnloadUnusedAssets().completed += delegate {
 				Task.Delay(50).ContinueWith(x => {
@@ -125,9 +164,6 @@ namespace GottaGoFast.HarmonyPatches {
 					Plugin.Log.Notice(String.Format("GC(2) took {0}ms", sw.ElapsedMilliseconds));
 					sw.Stop();
 #endif
-					// Disable GC while ingame to prevent GC lag spikes
-					if(isInSong)
-						GarbageCollector.GCMode = GarbageCollector.Mode.Disabled;
 				});
 #if DEBUG
 				Plugin.Log.Notice(String.Format("Cleanup took {0}ms", sw.ElapsedMilliseconds));

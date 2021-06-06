@@ -22,5 +22,21 @@ namespace GottaGoFast {
 
 			return enumeratorFn;
 		}
+
+		public static bool CheckIL(IEnumerable<CodeInstruction> instructions, Dictionary<int, OpCode> confirmations) {
+			foreach(var c in confirmations) {
+				if(instructions.Count() <= c.Key || instructions.ElementAt(c.Key).opcode != c.Value)
+					return false;
+			}
+			return true;
+		}
+
+		public static Label GetLabelForIndex(int index, IEnumerable<CodeInstruction> instructions, ILGenerator il) {
+			var label = il.DefineLabel();
+
+			instructions.ElementAt(index).labels.Add(label);
+
+			return label;
+		}
 	}
 }

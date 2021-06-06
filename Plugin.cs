@@ -17,13 +17,12 @@ using System.Threading.Tasks;
 using System.Threading;
 using BeatSaberMarkupLanguage.Settings;
 using System.Runtime.CompilerServices;
+using UnityEngine.Rendering;
 
 namespace GottaGoFast {
 
 	[Plugin(RuntimeOptions.SingleStartInit)]
 	public class Plugin {
-		public const string HarmonyId = "Kinsi55.BeatSaber.GottaGoFast";
-
 		internal static Plugin Instance { get; private set; }
 		internal static IPALogger Log { get; private set; }
 
@@ -46,38 +45,25 @@ namespace GottaGoFast {
 		[OnStart]
 		public void OnApplicationStart() {
 			Log.Debug("OnApplicationStart");
-			new GameObject("GottaGoFastController").AddComponent<GottaGoFastController>();
 
-			harmony = new Harmony(HarmonyId);
+			harmony = new Harmony("Kinsi55.BeatSaber.GottaGoFast");
 
-			if(Configuration.PluginConfig.Instance.EnableOptimizations) {
-				var enumeratorFn = Helper.getCoroutine(typeof(GameScenesManager), "ScenesTransitionCoroutine");
+			SceneManager.activeSceneChanged += OnActiveSceneChanged;
 
-				if(enumeratorFn == null) {
-					Log.Warn("Unable to patch GameScenesManager, couldnt find method");
-				} else {
-					harmony.Patch(
-						enumeratorFn,
-						transpiler: new HarmonyMethod(typeof(PatchGameScenesManager).GetMethod("Transpiler", BindingFlags.NonPublic | BindingFlags.Static))
-					);
-					Log.Info("Patched GameScenesManager");
-
-					SceneManager.activeSceneChanged += OnActiveSceneChanged;
-				}
-			}
+			Application.backgroundLoadingPriority = UnityEngine.ThreadPriority.High;
+			harmony.PatchAll(Assembly.GetExecutingAssembly());
 		}
 
 		#region Disableable
 		[OnEnable]
 		public void OnEnable() {
 			BSMLSettings.instance.AddSettingsMenu("Gotta Go Fast", "GottaGoFast.Views.settings.bsml", Configuration.PluginConfig.Instance);
-			harmony.PatchAll(Assembly.GetExecutingAssembly());
 		}
 
 		[OnDisable]
 		public void OnDisable() {
 			BSMLSettings.instance.RemoveSettingsMenu(Configuration.PluginConfig.Instance);
-			harmony.UnpatchAll(HarmonyId);
+			harmony.UnpatchAll(harmony.Id);
 		}
 		#endregion
 		
