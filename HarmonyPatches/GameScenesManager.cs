@@ -71,7 +71,6 @@ namespace GottaGoFast.HarmonyPatches {
 			return list.AsEnumerable();
 		}
 
-		[HarmonyTargetMethod]
 		static MethodBase TargetMethod() => Helper.getCoroutine(typeof(GameScenesManager), "ScenesTransitionCoroutine");
 
 		static byte gcInterval = 5; //Maybe config this idk

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace GottaGoFast.HarmonyPatches {
 	[HarmonyPatch]
-	class PatchStandardLevelFailedController {
+	static class PatchStandardLevelFailedController {
 		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
 			if(Helper.patchDelay(instructions.ElementAt(53), 2f, Configuration.PluginConfig.Instance.SongFailDisplayTime))
 				Plugin.Log.Info("Patched map fail display time");
@@ -16,14 +16,11 @@ namespace GottaGoFast.HarmonyPatches {
 			return instructions;
 		}
 		
-		[HarmonyTargetMethod]
-		static MethodBase TargetMethod() {
-			return Helper.getCoroutine(typeof(StandardLevelFailedController), "LevelFailedCoroutine");
-		}
+		static MethodBase TargetMethod() => Helper.getCoroutine(typeof(StandardLevelFailedController), "LevelFailedCoroutine");
 	}
 
 	[HarmonyPatch]
-	class PatchMissionLevelFailedController {
+	static class PatchMissionLevelFailedController {
 		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
 			if(Helper.patchDelay(instructions.ElementAt(52), 2f, Configuration.PluginConfig.Instance.SongFailDisplayTime))
 				Plugin.Log.Info("Patched mission fail display time");
@@ -31,9 +28,6 @@ namespace GottaGoFast.HarmonyPatches {
 			return instructions;
 		}
 
-		[HarmonyTargetMethod]
-		static MethodBase TargetMethod() {
-			return Helper.getCoroutine(typeof(MissionLevelFailedController), "LevelFailedCoroutine");
-		}
+		static MethodBase TargetMethod() => Helper.getCoroutine(typeof(MissionLevelFailedController), "LevelFailedCoroutine");
 	}
 }

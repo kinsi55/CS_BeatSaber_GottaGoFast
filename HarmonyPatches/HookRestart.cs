@@ -6,9 +6,8 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace GottaGoFast.HarmonyPatches {
-	[HarmonyPatch(typeof(StandardLevelRestartController))]
-	[HarmonyPatch("RestartLevel")]
-	class hookRestart {
+	[HarmonyPatch(typeof(StandardLevelRestartController), nameof(StandardLevelRestartController.RestartLevel))]
+	static class hookRestart {
 		static void Prefix() {
 			PatchGameScenesManager.isRestartingSong = true;
 		}

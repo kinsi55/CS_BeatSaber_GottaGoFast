@@ -6,9 +6,8 @@ using System.Text;
 
 namespace GottaGoFast.HarmonyPatches {
 
-	[HarmonyPatch(typeof(DefaultScenesTransitionsFromInit))]
-	[HarmonyPatch("TransitionToNextScene")]
-	class PatchHealthWarning {
+	[HarmonyPatch(typeof(DefaultScenesTransitionsFromInit), nameof(DefaultScenesTransitionsFromInit.TransitionToNextScene))]
+	static class PatchHealthWarning {
 		static bool Prefix(ref bool goStraightToMenu) {
 			if(Configuration.PluginConfig.Instance.RemoveHealthWarning)
 				goStraightToMenu = true;

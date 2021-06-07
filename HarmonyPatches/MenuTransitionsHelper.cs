@@ -10,7 +10,7 @@ namespace GottaGoFast.HarmonyPatches {
 	// This only patches the main game transitions as I'm unsure if it would have an impact on MP.
 	
 	[HarmonyPatch]
-	class PatchLevelStartTransition {
+	static class PatchLevelStartTransition {
 		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
 			if(Helper.patchDelay(instructions.ElementAt(32), 0.7f, Configuration.PluginConfig.Instance.SongStartTransition))
 				Plugin.Log.Info("Patched map start transition time");
@@ -22,15 +22,11 @@ namespace GottaGoFast.HarmonyPatches {
 			PatchGameScenesManager.isStartingSong = true;
 		}
 
-		[HarmonyTargetMethod]
-		static MethodBase TargetMethod() {
-			return typeof(MenuTransitionsHelper).GetMethods().Where(x => x.Name == "StartStandardLevel").ElementAt(1);
-		}
+		static MethodBase TargetMethod() => typeof(MenuTransitionsHelper).GetMethods().Where(x => x.Name == nameof(MenuTransitionsHelper.StartStandardLevel)).ElementAt(1);
 	}
 
-	[HarmonyPatch(typeof(MenuTransitionsHelper))]
-	[HarmonyPatch("HandleMainGameSceneDidFinish")]
-	class PatchLevelRestartTransition {
+	[HarmonyPatch(typeof(MenuTransitionsHelper), nameof(MenuTransitionsHelper.HandleMainGameSceneDidFinish))]
+	static class PatchLevelRestartTransition {
 		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
 			if(Helper.patchDelay(instructions.ElementAt(29), 0.35f, Configuration.PluginConfig.Instance.SongRestartTransition))
 				Plugin.Log.Info("Patched map restart transition time");
@@ -41,9 +37,8 @@ namespace GottaGoFast.HarmonyPatches {
 		}
 	}
 
-	[HarmonyPatch(typeof(MenuTransitionsHelper))]
-	[HarmonyPatch("StartMissionLevel")]
-	class PatchMissionStartTransition {
+	[HarmonyPatch(typeof(MenuTransitionsHelper), nameof(MenuTransitionsHelper.StartMissionLevel))]
+	static class PatchMissionStartTransition {
 		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
 			if(Helper.patchDelay(instructions.ElementAt(31), 0.7f, Configuration.PluginConfig.Instance.SongStartTransition))
 				Plugin.Log.Info("Patched mission start transition time");
@@ -52,9 +47,8 @@ namespace GottaGoFast.HarmonyPatches {
 		}
 	}
 
-	[HarmonyPatch(typeof(MenuTransitionsHelper))]
-	[HarmonyPatch("HandleMissionLevelSceneDidFinish")]
-	class PatchMissionRestartTransition {
+	[HarmonyPatch(typeof(MenuTransitionsHelper), nameof(MenuTransitionsHelper.HandleMissionLevelSceneDidFinish))]
+	static class PatchMissionRestartTransition {
 		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
 			if(Helper.patchDelay(instructions.ElementAt(25), 0.35f, Configuration.PluginConfig.Instance.SongRestartTransition))
 				Plugin.Log.Info("Patched mission restart transition time");
