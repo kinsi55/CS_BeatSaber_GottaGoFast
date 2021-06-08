@@ -73,7 +73,7 @@ namespace GottaGoFast.HarmonyPatches {
 
 		static MethodBase TargetMethod() => Helper.getCoroutine(typeof(GameScenesManager), "ScenesTransitionCoroutine");
 
-		static byte gcInterval = 5; //Maybe config this idk
+		//static byte gcInterval = 5; //Maybe config this idk
 		static byte gcSkipCounterGame = 1;
 		static byte gcSkipCounterMenu = 3;
 
@@ -103,7 +103,7 @@ namespace GottaGoFast.HarmonyPatches {
 				GarbageCollector.GCMode = GarbageCollector.Mode.Enabled;
 				isInSong = false;
 				Application.backgroundLoadingPriority = ThreadPriority.High;
-				if(gcSkipCounterMenu++ % gcInterval != 0) return;
+				if(gcSkipCounterMenu++ % Configuration.PluginConfig.Instance.GcInterval != 0) return;
 				Plugin.Log.Info("Running GC because Leaving song");
 				//return;
 				// The second condition is a failsafe
@@ -112,7 +112,7 @@ namespace GottaGoFast.HarmonyPatches {
 
 				isStartingSong = false;
 				isInSong = true;
-				if(gcSkipCounterGame++ % gcInterval != 0) return;
+				if(gcSkipCounterGame++ % Configuration.PluginConfig.Instance.GcInterval != 0) return;
 				Plugin.Log.Info("Running GC because Starting song");
 
 				// This was kind of an experiment to see if it helps with memory usage, doesnt look like it.
@@ -132,8 +132,12 @@ namespace GottaGoFast.HarmonyPatches {
 			var sw = new Stopwatch();
 			sw.Start();
 #endif
-
-			//GarbageCollector.GCMode = GarbageCollector.Mode.Enabled;
+			/*
+			 * This game is super leaky (Maybe its plugins, who knows). Click on 100 songs in the song browser, 
+			 * go into / leave a song a couple of times, you will already be at multiple gigabytes. Spamming GC / 
+			 * WaitForPendingFinalizers + UnloadUnusedAssets literally makes no dent in the memory usage. The only
+			 * I GC here is because the basegame does that here, but from my tests it doesnt actually yield anything
+			 */
 			GC.Collect();
 
 			if(isInSong)

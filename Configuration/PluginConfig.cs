@@ -11,6 +11,7 @@ namespace GottaGoFast.Configuration {
 		public virtual float SongFailDisplayTime { get; set; } = 0.5f;
 		public virtual bool RemoveHealthWarning { get; set; } = true;
 		public virtual bool EnableOptimizations { get; set; } = true;
+		public virtual int GcInterval { get; set; } = 8;
 
 		/// <summary>
 		/// This is called whenever BSIPA reads the config from disk (including when file changes are detected).
@@ -24,7 +25,8 @@ namespace GottaGoFast.Configuration {
 		/// </summary>
 		public virtual void Changed() {
 			// Do stuff when the config is changed.
-
+			if(GcInterval > 20)
+				GcInterval = 20;
 		}
 
 		/// <summary>
