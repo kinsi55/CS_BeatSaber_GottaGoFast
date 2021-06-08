@@ -11,6 +11,7 @@ namespace GottaGoFast.Configuration {
 		public virtual float SongFailDisplayTime { get; set; } = 0.5f;
 		public virtual bool RemoveHealthWarning { get; set; } = true;
 		public virtual bool EnableOptimizations { get; set; } = true;
+		public virtual bool UnloadOnFree { get; set; } = false;
 		public virtual int GcInterval { get; set; } = 8;
 
 		/// <summary>

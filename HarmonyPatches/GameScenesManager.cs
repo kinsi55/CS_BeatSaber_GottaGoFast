@@ -116,7 +116,7 @@ namespace GottaGoFast.HarmonyPatches {
 				Plugin.Log.Info("Running GC because Starting song");
 
 				// This was kind of an experiment to see if it helps with memory usage, doesnt look like it.
-				//unload = true;
+				unload = Configuration.PluginConfig.Instance.UnloadOnFree;
 				//return;
 			} else {
 				return;
