@@ -13,7 +13,7 @@ namespace GottaGoFast.Configuration {
 		public virtual bool RemoveHealthWarning { get; set; } = true;
 		public virtual bool EnableOptimizations { get; set; } = true;
 		public virtual bool UnloadOnFree { get; set; } = false;
-		public virtual int GcInterval { get; set; } = 8;
+		public virtual int GcInterval { get; set; } = 5;
 
 		/// <summary>
 		/// This is called whenever BSIPA reads the config from disk (including when file changes are detected).
