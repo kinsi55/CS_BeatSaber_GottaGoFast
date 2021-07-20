@@ -12,8 +12,8 @@ namespace GottaGoFast.HarmonyPatches {
 	[HarmonyPatch]
 	static class PatchLevelStartTransition {
 		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
-			if(Helper.patchDelay(instructions.ElementAt(32), 0.7f, Configuration.PluginConfig.Instance.SongStartTransition))
-				Plugin.Log.Info("Patched map start transition time");
+			if(!Helper.patchDelay(instructions.ElementAt(32), 0.7f, Configuration.PluginConfig.Instance.SongStartTransition))
+				Plugin.Log.Info("Failed to patch map start transition time");
 
 			return instructions;
 		}
@@ -28,10 +28,10 @@ namespace GottaGoFast.HarmonyPatches {
 	[HarmonyPatch(typeof(MenuTransitionsHelper), nameof(MenuTransitionsHelper.HandleMainGameSceneDidFinish))]
 	static class PatchLevelRestartTransition {
 		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
-			if(Helper.patchDelay(instructions.ElementAt(29), 0.35f, Configuration.PluginConfig.Instance.SongRestartTransition))
-				Plugin.Log.Info("Patched map restart transition time");
-			if(Helper.patchDelay(instructions.ElementAt(31), 1.3f, Configuration.PluginConfig.Instance.SongPassFailTransition))
-				Plugin.Log.Info("Patched map clear / fail transition time");
+			if(!Helper.patchDelay(instructions.ElementAt(29), 0.35f, Configuration.PluginConfig.Instance.SongRestartTransition))
+				Plugin.Log.Warn("Failed to patch map restart transition time");
+			if(!Helper.patchDelay(instructions.ElementAt(31), 1.3f, Configuration.PluginConfig.Instance.SongPassFailTransition))
+				Plugin.Log.Warn("Failed to patch map clear / fail transition time");
 
 			return instructions;
 		}
@@ -40,8 +40,8 @@ namespace GottaGoFast.HarmonyPatches {
 	[HarmonyPatch(typeof(MenuTransitionsHelper), nameof(MenuTransitionsHelper.StartMissionLevel))]
 	static class PatchMissionStartTransition {
 		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
-			if(Helper.patchDelay(instructions.ElementAt(31), 0.7f, Configuration.PluginConfig.Instance.SongStartTransition))
-				Plugin.Log.Info("Patched mission start transition time");
+			if(!Helper.patchDelay(instructions.ElementAt(31), 0.7f, Configuration.PluginConfig.Instance.SongStartTransition))
+				Plugin.Log.Warn("Failed to patch mission start transition time");
 
 			return instructions;
 		}
@@ -50,10 +50,10 @@ namespace GottaGoFast.HarmonyPatches {
 	[HarmonyPatch(typeof(MenuTransitionsHelper), nameof(MenuTransitionsHelper.HandleMissionLevelSceneDidFinish))]
 	static class PatchMissionRestartTransition {
 		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
-			if(Helper.patchDelay(instructions.ElementAt(25), 0.35f, Configuration.PluginConfig.Instance.SongRestartTransition))
-				Plugin.Log.Info("Patched mission restart transition time");
-			if(Helper.patchDelay(instructions.ElementAt(27), 1.3f, Configuration.PluginConfig.Instance.SongPassFailTransition))
-				Plugin.Log.Info("Patched mission clear / fail transition time");
+			if(!Helper.patchDelay(instructions.ElementAt(25), 0.35f, Configuration.PluginConfig.Instance.SongRestartTransition))
+				Plugin.Log.Warn("Failed to patch mission restart transition time");
+			if(!Helper.patchDelay(instructions.ElementAt(27), 1.3f, Configuration.PluginConfig.Instance.SongPassFailTransition))
+				Plugin.Log.Warn("Failed to patch mission clear / fail transition time");
 
 			return instructions;
 		}

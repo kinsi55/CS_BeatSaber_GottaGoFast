@@ -10,8 +10,8 @@ namespace GottaGoFast.HarmonyPatches {
 	[HarmonyPatch]
 	static class PatchStandardLevelFailedController {
 		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
-			if(Helper.patchDelay(instructions.ElementAt(53), 2f, Configuration.PluginConfig.Instance.SongFailDisplayTime))
-				Plugin.Log.Info("Patched map fail display time");
+			if(!Helper.patchDelay(instructions.ElementAt(53), 2f, Configuration.PluginConfig.Instance.SongFailDisplayTime))
+				Plugin.Log.Warn("Failed to patch map fail display time");
 
 			return instructions;
 		}
@@ -22,8 +22,8 @@ namespace GottaGoFast.HarmonyPatches {
 	[HarmonyPatch]
 	static class PatchMissionLevelFailedController {
 		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
-			if(Helper.patchDelay(instructions.ElementAt(52), 2f, Configuration.PluginConfig.Instance.SongFailDisplayTime))
-				Plugin.Log.Info("Patched mission fail display time");
+			if(!Helper.patchDelay(instructions.ElementAt(52), 2f, Configuration.PluginConfig.Instance.SongFailDisplayTime))
+				Plugin.Log.Warn("Failed to patch mission fail display time");
 
 			return instructions;
 		}
