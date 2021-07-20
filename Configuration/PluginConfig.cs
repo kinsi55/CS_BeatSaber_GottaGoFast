@@ -9,6 +9,7 @@ namespace GottaGoFast.Configuration {
 		public virtual float SongRestartTransition { get; set; } = 0.1f;
 		public virtual float SongPassFailTransition { get; set; } = 0.6f;
 		public virtual float SongFailDisplayTime { get; set; } = 0.5f;
+		public virtual float MaxFadeInTransitionTime { get; set; } = 0.4f;
 		public virtual bool RemoveHealthWarning { get; set; } = true;
 		public virtual bool EnableOptimizations { get; set; } = true;
 		public virtual bool UnloadOnFree { get; set; } = false;
