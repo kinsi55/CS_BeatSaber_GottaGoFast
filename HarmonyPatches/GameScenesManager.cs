@@ -35,13 +35,18 @@ namespace GottaGoFast.HarmonyPatches {
 			list[422].operand = AccessTools.Method(typeof(PatchGameScenesManager), nameof(__PostFix));
 
 			// Exit point for original UnloadUnusedAssets() call
-			var moddedCleanupLabel = il.DefineLabel();
-			list[413].labels.Add(moddedCleanupLabel);
+			var UnloadUnusedAssetsExit = il.DefineLabel();
+			list[413].labels.Add(UnloadUnusedAssetsExit);
 
 			// Add a skip conditional for the original UnloadUnusedAssets() call
-			list.InsertRange(patchOffset, new CodeInstruction[] {
-				new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(PatchGameScenesManager), nameof(__IsEnabled))).MoveLabelsFrom(list[patchOffset]),
-				new CodeInstruction(OpCodes.Brtrue, moddedCleanupLabel)
+			list.InsertRange(patchOffset, new[] {
+				// We need to clear the old __current so the game doesnt explode
+				new CodeInstruction(OpCodes.Ldarg_0).MoveLabelsFrom(list[patchOffset]),
+				new CodeInstruction(OpCodes.Ldnull),
+				new CodeInstruction(OpCodes.Stfld, list[412].operand),
+
+				new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(PatchGameScenesManager), nameof(__IsEnabled))),
+				new CodeInstruction(OpCodes.Brtrue, UnloadUnusedAssetsExit)
 			});
 
 			Plugin.Log.Info("Patched GameScenesManager");
