@@ -4,6 +4,7 @@ using System.Linq;
 using HarmonyLib;
 using System.Reflection.Emit;
 using System.Reflection;
+using UnityEngine;
 
 namespace GottaGoFast.HarmonyPatches {
 
@@ -19,6 +20,7 @@ namespace GottaGoFast.HarmonyPatches {
 		}
 
 		static void Prefix() {
+			Application.backgroundLoadingPriority = UnityEngine.ThreadPriority.Low;
 			PatchGameScenesManager.isStartingSong = true;
 		}
 

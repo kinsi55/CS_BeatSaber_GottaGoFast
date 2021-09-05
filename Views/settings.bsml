@@ -1,6 +1,11 @@
 ﻿<settings-container>
 	<horizontal horizontal-fit="PreferredSize">
-		<text text='The settings require a Game restart to apply' align='Center'></text>
+		<checkbox-setting apply-on-change="true" value="EnableOptimizations" text="Enable optimizations"
+						hover-hint="Enables deeper optimizations beyond shorter transition delays"
+						></checkbox-setting>
+	</horizontal>
+	<horizontal horizontal-fit="PreferredSize">
+		<text text='The following settings require a Game restart to apply' align='Center'></text>
 	</horizontal>
 	<horizontal horizontal-fit="PreferredSize">
 		<checkbox-setting apply-on-change="true" value="RemoveHealthWarning" text="Remove Health warning"
@@ -31,10 +36,5 @@
 		<slider-setting apply-on-change="true" value="SongFailDisplayTime" text="Fail text display duration"
 						hover-hint="How long to show the level failed message for"
 						min="0" max="2" increment="0.05"></slider-setting>
-	</horizontal>
-	<horizontal horizontal-fit="PreferredSize">
-		<checkbox-setting apply-on-change="true" value="EnableOptimizations" text="Enable optimizations"
-						hover-hint="Enables deeper optimizations beyond shorter transition delays"
-						></checkbox-setting>
 	</horizontal>
 </settings-container>

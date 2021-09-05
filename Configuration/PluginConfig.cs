@@ -12,7 +12,6 @@ namespace GottaGoFast.Configuration {
 		public virtual float MaxFadeInTransitionTime { get; set; } = 0.4f;
 		public virtual bool RemoveHealthWarning { get; set; } = true;
 		public virtual bool EnableOptimizations { get; set; } = true;
-		public virtual bool UnloadOnFree { get; set; } = false;
 		public virtual int GcInterval { get; set; } = 5;
 
 		/// <summary>

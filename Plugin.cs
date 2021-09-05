@@ -40,6 +40,7 @@ namespace GottaGoFast {
 			Log.Info("Gotta Go Fast initialized.");
 			
 			Configuration.PluginConfig.Instance = conf.Generated<Configuration.PluginConfig>();
+			Application.backgroundLoadingPriority = UnityEngine.ThreadPriority.High;
 		}
 
 		[OnStart]
@@ -50,7 +51,6 @@ namespace GottaGoFast {
 
 			SceneManager.activeSceneChanged += OnActiveSceneChanged;
 
-			Application.backgroundLoadingPriority = UnityEngine.ThreadPriority.High;
 			harmony.PatchAll(Assembly.GetExecutingAssembly());
 		}
 

@@ -16,59 +16,37 @@ namespace GottaGoFast.HarmonyPatches {
 
 		private static int patchOffset = 408;
 
-		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
-			if(!Configuration.PluginConfig.Instance.EnableOptimizations) {
-				Plugin.Log.Info("Not patching GameScenesManager because optimizations are disabled");
-				return instructions;
-			}
-
-			var yeetAmount = 0;
-
-			// 1.16.2
-			if(Helper.CheckIL(instructions, new Dictionary<int, OpCode>() {
+		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator il) {
+			// 1.16.2+
+			if(!Helper.CheckIL(instructions, new Dictionary<int, OpCode>() {
 				{ patchOffset, OpCodes.Call },
 				{ 409, OpCodes.Stloc_3 },
-				{ patchOffset + 14, OpCodes.Call }
-			}) && (instructions.ElementAt(418).opcode == OpCodes.Leave || instructions.ElementAt(418).opcode == OpCodes.Leave_S)) {
-				yeetAmount = 15;
-			// <1.16.1
-			} else if(Helper.CheckIL(instructions, new Dictionary<int, OpCode>() {
-				{ patchOffset, OpCodes.Call },
-				{ patchOffset + 1, OpCodes.Call },
-				{ patchOffset + 2, OpCodes.Pop },
-				{ patchOffset + 3, OpCodes.Call }
+				{ 421, OpCodes.Stfld },
+				{ 422, OpCodes.Call },
+				{ 423, OpCodes.Ldc_I4_0 }
 			})) {
-				yeetAmount = 3;
-
-				// For 1.16.1 specificall we also need to yeet the shaderwarmup
-				if(IPA.Utilities.UnityGame.GameVersion.ToString() == "1.16.1") {
-					Plugin.Log.Info("Yeeting ShaderWarmup because we are on 1.16.1");
-					yeetAmount = 4;
-				}
-			} else {
 				Plugin.Log.Warn("Couldn't patch GameScenesManager, unexpected existing OpCodes");
 				return instructions;
 			}
 
 			var list = instructions.ToList();
-			var labels = new List<Label>();
 
-			for(var i = patchOffset; i < patchOffset + yeetAmount; i++) {
-				if(list[i].labels.Count > 0)
-					labels.AddRange(list[i].labels);
-			}
+			// Original GC call, replaced with our custom logic
+			list[422].operand = AccessTools.Method(typeof(PatchGameScenesManager), nameof(__PostFix));
 
-			list.RemoveRange(patchOffset, yeetAmount);
+			// Exit point for original UnloadUnusedAssets() call
+			var moddedCleanupLabel = il.DefineLabel();
+			list[413].labels.Add(moddedCleanupLabel);
 
-			var inst = new CodeInstruction(OpCodes.Call, typeof(PatchGameScenesManager).GetMethod("__PostFix", BindingFlags.Static | BindingFlags.Public));
-
-			inst.labels.AddRange(labels.Distinct());
-
-			list.Insert(patchOffset, inst);
+			// Add a skip conditional for the original UnloadUnusedAssets() call
+			list.InsertRange(patchOffset, new CodeInstruction[] {
+				new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(PatchGameScenesManager), nameof(__IsEnabled))).MoveLabelsFrom(list[patchOffset]),
+				new CodeInstruction(OpCodes.Brtrue, moddedCleanupLabel)
+			});
 
 			Plugin.Log.Info("Patched GameScenesManager");
 
-			return list.AsEnumerable();
+			return list;
 		}
 
 		static MethodBase TargetMethod() => Helper.getCoroutine(typeof(GameScenesManager), "ScenesTransitionCoroutine");
@@ -83,50 +61,43 @@ namespace GottaGoFast.HarmonyPatches {
 
 		static bool isInSong = false;
 
-		static void IsInSong() {
-			GarbageCollector.GCMode = GarbageCollector.Mode.Disabled;
-			Application.backgroundLoadingPriority = ThreadPriority.Low;
-		}
+		public static bool __IsEnabled() => Configuration.PluginConfig.Instance.EnableOptimizations;
 
 		public static void __PostFix() {
+			if(!__IsEnabled()) {
+				Application.backgroundLoadingPriority = ThreadPriority.Low;
+				GC.Collect();
+				return;
+			}
+
 			if(isRestartingSong) {
 				if(isStartingSong)
 					isRestartingSong = isStartingSong = false;
 				return;
 			}
 
-			bool unload = false;
-
 			var YES = Plugin.currentScene.name;
 
-			if(isInSong && YES != "GameCore" && YES != "EmptyTransition") {
-				GarbageCollector.GCMode = GarbageCollector.Mode.Enabled;
+			if(isInSong && YES != "GameCore") {
+				Application.backgroundLoadingPriority = UnityEngine.ThreadPriority.High;
 				isInSong = false;
-				Application.backgroundLoadingPriority = ThreadPriority.High;
 				if(gcSkipCounterMenu++ % Configuration.PluginConfig.Instance.GcInterval != 0) return;
 				Plugin.Log.Info("Running GC because Leaving song");
 				//return;
 				// The second condition is a failsafe
-			} else if((isStartingSong && (YES == "EmptyTransition" || YES == "GameCore")) || (!isInSong && YES == "GameCore")) {
-				IsInSong();
-
+			} else if(YES == "GameCore") {
 				isStartingSong = false;
 				isInSong = true;
 				if(gcSkipCounterGame++ % Configuration.PluginConfig.Instance.GcInterval != 0) return;
 				Plugin.Log.Info("Running GC because Starting song");
-
-				// This was kind of an experiment to see if it helps with memory usage, doesnt look like it.
-				unload = Configuration.PluginConfig.Instance.UnloadOnFree;
-				//return;
 			} else {
 				return;
 			}
 
-
-			DoGc(unload);
+			DoGc();
 		}
 
-		public static void DoGc(bool doUnload) {
+		public static void DoGc() {
 #if DEBUG
 			Plugin.Log.Notice("Running GC / Cleanup...");
 			var sw = new Stopwatch();
@@ -140,34 +111,10 @@ namespace GottaGoFast.HarmonyPatches {
 			 */
 			GC.Collect();
 
-			if(isInSong)
-				IsInSong();
-
 #if DEBUG
 			Plugin.Log.Notice(String.Format("GC took {0}ms", sw.ElapsedMilliseconds));
 			sw.Restart();
 #endif
-			if(!doUnload)
-				return;
-
-			Resources.UnloadUnusedAssets().completed += delegate {
-				Task.Delay(50).ContinueWith(x => {
-#if DEBUG
-					sw.Restart();
-#endif
-					//https://forum.unity.com/threads/resources-unloadunusedassets-vs-gc-collect.358597/
-					//  "liortal's guess is correct, Resources.UnloadUnusedAssets is indeed calling GC.Collect inside. 
-					// So if you already calling Resources.UnloadUnusedAssets, you shouldn't call GC.Collect"
-					//GC.Collect();
-#if DEBUG
-					Plugin.Log.Notice(String.Format("GC(2) took {0}ms", sw.ElapsedMilliseconds));
-					sw.Stop();
-#endif
-				});
-#if DEBUG
-				Plugin.Log.Notice(String.Format("Cleanup took {0}ms", sw.ElapsedMilliseconds));
-#endif
-			};
 		}
 	}
 }
