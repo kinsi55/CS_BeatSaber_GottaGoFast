@@ -34,19 +34,14 @@ namespace GottaGoFast.HarmonyPatches {
 			// Original GC call, replaced with our custom logic
 			list[422].operand = AccessTools.Method(typeof(PatchGameScenesManager), nameof(__PostFix));
 
-			// Exit point for original UnloadUnusedAssets() call
-			var UnloadUnusedAssetsExit = il.DefineLabel();
-			list[413].labels.Add(UnloadUnusedAssetsExit);
-
 			// Add a skip conditional for the original UnloadUnusedAssets() call
 			list.InsertRange(patchOffset, new[] {
-				// We need to clear the old __current so the game doesnt explode
-				new CodeInstruction(OpCodes.Ldarg_0).MoveLabelsFrom(list[patchOffset]),
-				new CodeInstruction(OpCodes.Ldnull),
-				new CodeInstruction(OpCodes.Stfld, list[412].operand),
-
-				new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(PatchGameScenesManager), nameof(__IsEnabled))),
-				new CodeInstruction(OpCodes.Brtrue, UnloadUnusedAssetsExit)
+				new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(PatchGameScenesManager), nameof(__IsEnabled))).MoveLabelsFrom(list[patchOffset]),
+				/*
+				 * The UnloadUnusedAssets call will set the state to 7 and continue with that on the next tick - This just jumps straight to that
+				 * It should already have a label for the enumator switch case so this is an extra failsafe I guess
+				 */
+				new CodeInstruction(OpCodes.Brtrue, list[419].labels[0])
 			});
 
 			Plugin.Log.Info("Patched GameScenesManager");
@@ -91,6 +86,7 @@ namespace GottaGoFast.HarmonyPatches {
 				//return;
 				// The second condition is a failsafe
 			} else if(YES == "GameCore") {
+				Application.backgroundLoadingPriority = ThreadPriority.Low;
 				isStartingSong = false;
 				isInSong = true;
 				if(gcSkipCounterGame++ % Configuration.PluginConfig.Instance.GcInterval != 0) return;
