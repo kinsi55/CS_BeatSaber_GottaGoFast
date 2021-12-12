@@ -113,7 +113,6 @@
     <Compile Include="HarmonyPatches\HookRestart.cs" />
     <Compile Include="HarmonyPatches\LevelFailController.cs" />
     <Compile Include="HarmonyPatches\MenuTransitionsHelper.cs" />
-    <Compile Include="HarmonyPatches\ResultsViewController.cs" />
     <Compile Include="Helper.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Configuration\PluginConfig.cs" />

@@ -1,10 +1,7 @@
 ﻿using HarmonyLib;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace GottaGoFast.HarmonyPatches {
 	[HarmonyPatch]
@@ -15,7 +12,7 @@ namespace GottaGoFast.HarmonyPatches {
 
 			return instructions;
 		}
-		
+
 		static MethodBase TargetMethod() => Helper.getCoroutine(typeof(StandardLevelFailedController), "LevelFailedCoroutine");
 	}
 

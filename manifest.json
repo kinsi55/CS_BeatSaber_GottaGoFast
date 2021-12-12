@@ -7,7 +7,8 @@
 	"description": "Significantly decreases the time it takes to (re)start songs",
 	"gameVersion": "1.16.2",
 	"dependsOn": {
-		"BSIPA": "^4.0.5"
+		"BSIPA": "^4.0.5",
+		"BeatSaberMarkupLanguage": "^1.5.3"
 	},
 	"features": []
 }

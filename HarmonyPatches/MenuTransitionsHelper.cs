@@ -9,7 +9,7 @@ using UnityEngine;
 namespace GottaGoFast.HarmonyPatches {
 
 	// This only patches the main game transitions as I'm unsure if it would have an impact on MP.
-	
+
 	[HarmonyPatch]
 	static class PatchLevelStartTransition {
 		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
