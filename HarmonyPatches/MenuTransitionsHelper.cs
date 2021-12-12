@@ -1,10 +1,7 @@
-﻿using System;
+﻿using HarmonyLib;
 using System.Collections.Generic;
 using System.Linq;
-using HarmonyLib;
-using System.Reflection.Emit;
 using System.Reflection;
-using UnityEngine;
 
 namespace GottaGoFast.HarmonyPatches {
 
@@ -17,11 +14,6 @@ namespace GottaGoFast.HarmonyPatches {
 				Plugin.Log.Info("Failed to patch map start transition time");
 
 			return instructions;
-		}
-
-		static void Prefix() {
-			Application.backgroundLoadingPriority = UnityEngine.ThreadPriority.Low;
-			PatchGameScenesManager.isStartingSong = true;
 		}
 
 		static MethodBase TargetMethod() => typeof(MenuTransitionsHelper).GetMethods().Where(x => x.Name == nameof(MenuTransitionsHelper.StartStandardLevel)).ElementAt(1);

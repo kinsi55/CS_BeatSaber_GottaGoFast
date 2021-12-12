@@ -1,30 +1,28 @@
-﻿using System;
+﻿using HarmonyLib;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using HarmonyLib;
-using System.Reflection.Emit;
-using UnityEngine.Scripting;
-using UnityEngine;
 using System.Reflection;
-using System.Diagnostics;
-using System.Threading.Tasks;
+using System.Reflection.Emit;
 
 namespace GottaGoFast.HarmonyPatches {
 	[HarmonyPatch]
 	static class PatchGameScenesManager {
 		public static bool skipGc = false;
 
-		private static int patchOffset = 408;
+		const int UNLOAD_UNUSED_ASSETS = 408;
+		const int STFLD_STATE_7 = 413;
 
 		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator il) {
 			// 1.16.2+
 			if(!Helper.CheckIL(instructions, new Dictionary<int, OpCode>() {
-				{ patchOffset, OpCodes.Call },
-				{ 409, OpCodes.Stloc_3 },
-				{ 421, OpCodes.Stfld },
-				{ 422, OpCodes.Call },
-				{ 423, OpCodes.Ldc_I4_0 }
-			})) {
+					{ UNLOAD_UNUSED_ASSETS, OpCodes.Call },
+					{ 409, OpCodes.Stloc_3 },
+					{ STFLD_STATE_7 + 1, OpCodes.Ldc_I4_7 },
+					{ 421, OpCodes.Stfld },
+					{ 422, OpCodes.Call },
+					{ 423, OpCodes.Ldc_I4_0 }
+				})) {
 				Plugin.Log.Warn("Couldn't patch GameScenesManager, unexpected existing OpCodes");
 				return instructions;
 			}
@@ -34,15 +32,29 @@ namespace GottaGoFast.HarmonyPatches {
 			// Original GC call, replaced with our custom logic
 			list[422].operand = AccessTools.Method(typeof(PatchGameScenesManager), nameof(__PostFix));
 
+
+			// Make sure it has a label
+			list[STFLD_STATE_7].labels.Add(new Label());
+
+			var unloadConditional = new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(PatchGameScenesManager), nameof(__IsEnabled))).MoveLabelsFrom(list[UNLOAD_UNUSED_ASSETS]);
+
+			// Re-Add a new label for original unload call to break to later
+			var unloadLabel = new Label();
+			list[UNLOAD_UNUSED_ASSETS].labels.Add(unloadLabel);
+
 			// Add a skip conditional for the original UnloadUnusedAssets() call
-			list.InsertRange(patchOffset, new[] {
-				new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(PatchGameScenesManager), nameof(__IsEnabled))).MoveLabelsFrom(list[patchOffset]),
-				/*
-				 * The UnloadUnusedAssets call will set the state to 7 and continue with that on the next tick - This just jumps straight to that
-				 * It should already have a label for the enumator switch case so this is an extra failsafe I guess
-				 */
-				new CodeInstruction(OpCodes.Brtrue, list[419].labels[0])
-			});
+			list.InsertRange(UNLOAD_UNUSED_ASSETS, new[] {
+					// Check if Optimizations are enabled
+					unloadConditional,
+					// If no, jump to the original UnloadUnusedAssets() call (Which will be below the following IL)
+					new CodeInstruction(OpCodes.Brfalse, unloadLabel),
+					// If yes, set the __current to null..
+					new CodeInstruction(OpCodes.Ldarg_0),
+					new CodeInstruction(OpCodes.Ldnull),
+					new CodeInstruction(OpCodes.Stfld, list[412].operand),
+					// And jump to the IL where it sets the state to 7, which will then go to the exit of the coroutine next frame
+					new CodeInstruction(OpCodes.Br, list[STFLD_STATE_7].labels[0])
+				});
 
 			Plugin.Log.Info("Patched GameScenesManager");
 
@@ -51,50 +63,28 @@ namespace GottaGoFast.HarmonyPatches {
 
 		static MethodBase TargetMethod() => Helper.getCoroutine(typeof(GameScenesManager), "ScenesTransitionCoroutine");
 
-		//static byte gcInterval = 5; //Maybe config this idk
-		static byte gcSkipCounterGame = 1;
-		static byte gcSkipCounterMenu = 3;
+		static byte gcSkipCounter = 3;
 
-		//static bool wasInSong = false;
 		public static bool isRestartingSong = false;
-		public static bool isStartingSong = false;
-
-		static bool isInSong = false;
 
 		public static bool __IsEnabled() => Configuration.PluginConfig.Instance.EnableOptimizations;
 
 		public static void __PostFix() {
 			if(!__IsEnabled()) {
-				Application.backgroundLoadingPriority = ThreadPriority.Low;
 				GC.Collect();
 				return;
 			}
 
 			if(isRestartingSong) {
-				if(isStartingSong)
-					isRestartingSong = isStartingSong = false;
+				if(Plugin.currentScene.name == "GameCore")
+					isRestartingSong = false;
 				return;
 			}
 
-			var YES = Plugin.currentScene.name;
-
-			if(isInSong && YES != "GameCore") {
-				Application.backgroundLoadingPriority = UnityEngine.ThreadPriority.High;
-				isInSong = false;
-				if(gcSkipCounterMenu++ % Configuration.PluginConfig.Instance.GcInterval != 0) return;
-				Plugin.Log.Info("Running GC because Leaving song");
-				//return;
-				// The second condition is a failsafe
-			} else if(YES == "GameCore") {
-				Application.backgroundLoadingPriority = ThreadPriority.Low;
-				isStartingSong = false;
-				isInSong = true;
-				if(gcSkipCounterGame++ % Configuration.PluginConfig.Instance.GcInterval != 0) return;
-				Plugin.Log.Info("Running GC because Starting song");
-			} else {
+			if(gcSkipCounter++ % Configuration.PluginConfig.Instance.GcSkips != 0)
 				return;
-			}
 
+			Plugin.Log.Info("Running GC");
 			DoGc();
 		}
 
