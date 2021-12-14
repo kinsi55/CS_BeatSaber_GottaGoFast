@@ -4,7 +4,7 @@ This plugin completely removes or shortens scene transitions which are everywher
 
 ---
 
-Currently compatible game versions: **1.16.2 and up**, for older versions see older releases - PC only, I dont own a Quest so I cannot really port it to that sorry!
+The Game version(s) specific releases are compatible with are mentioned in the Release title (Its obviously possible latest is not supported assuming its been released recently). If you need the plugin for an older version - Grab an older release that fits 🤯
 
 ### Install
 
