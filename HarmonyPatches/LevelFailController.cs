@@ -13,7 +13,7 @@ namespace GottaGoFast.HarmonyPatches {
 			return instructions;
 		}
 
-		static MethodBase TargetMethod() => Helper.getCoroutine(typeof(StandardLevelFailedController), "LevelFailedCoroutine");
+		static MethodBase TargetMethod() => Helper.getCoroutine(typeof(StandardLevelFailedController), nameof(StandardLevelFailedController.LevelFailedCoroutine));
 	}
 
 	[HarmonyPatch]
@@ -25,6 +25,6 @@ namespace GottaGoFast.HarmonyPatches {
 			return instructions;
 		}
 
-		static MethodBase TargetMethod() => Helper.getCoroutine(typeof(MissionLevelFailedController), "LevelFailedCoroutine");
+		static MethodBase TargetMethod() => Helper.getCoroutine(typeof(MissionLevelFailedController), nameof(MissionLevelFailedController.LevelFailedCoroutine));
 	}
 }

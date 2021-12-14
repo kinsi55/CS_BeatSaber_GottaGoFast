@@ -1,11 +1,23 @@
-﻿using BeatSaberMarkupLanguage.Settings;
-using HarmonyLib;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using IPA;
 using IPA.Config;
 using IPA.Config.Stores;
-using System.Reflection;
 using UnityEngine.SceneManagement;
+using UnityEngine;
 using IPALogger = IPA.Logging.Logger;
+
+using HarmonyLib;
+using System.Reflection;
+using GottaGoFast.HarmonyPatches;
+using UnityEngine.Scripting;
+using System.Threading.Tasks;
+using System.Threading;
+using BeatSaberMarkupLanguage.Settings;
+using System.Runtime.CompilerServices;
+using UnityEngine.Rendering;
 
 namespace GottaGoFast {
 
@@ -26,7 +38,7 @@ namespace GottaGoFast {
 			Instance = this;
 			Log = logger;
 			Log.Info("Gotta Go Fast initialized.");
-
+			
 			Configuration.PluginConfig.Instance = conf.Generated<Configuration.PluginConfig>();
 			harmony = new Harmony("Kinsi55.BeatSaber.GottaGoFast");
 		}
@@ -48,7 +60,7 @@ namespace GottaGoFast {
 			BSMLSettings.instance.RemoveSettingsMenu(Configuration.PluginConfig.Instance);
 		}
 		#endregion
-
+		
 		public static Scene currentScene;
 
 		public void OnActiveSceneChanged(Scene oldScene, Scene newScene) {

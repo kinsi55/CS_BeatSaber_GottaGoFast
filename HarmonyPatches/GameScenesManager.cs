@@ -61,7 +61,7 @@ namespace GottaGoFast.HarmonyPatches {
 			return list;
 		}
 
-		static MethodBase TargetMethod() => Helper.getCoroutine(typeof(GameScenesManager), "ScenesTransitionCoroutine");
+		static MethodBase TargetMethod() => Helper.getCoroutine(typeof(GameScenesManager), nameof(GameScenesManager.ScenesTransitionCoroutine));
 
 		static byte gcSkipCounter = 3;
 
