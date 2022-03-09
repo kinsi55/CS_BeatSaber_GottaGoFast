@@ -1,30 +1,32 @@
 ﻿using HarmonyLib;
+using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
 
 namespace GottaGoFast.HarmonyPatches {
 	[HarmonyPatch]
 	static class PatchStandardLevelFailedController {
 		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
-			if(!Helper.patchDelay(instructions.ElementAt(53), 2f, Configuration.PluginConfig.Instance.SongFailDisplayTime))
-				Plugin.Log.Warn("Failed to patch map fail display time");
+			var matcher = new CodeMatcher(instructions);
 
-			return instructions;
+			matcher.Start().MatchForward(
+				false,
+				new CodeMatch(OpCodes.Ldarg_0),
+				new CodeMatch(OpCodes.Ldc_R4, null, "delay"),
+				new CodeMatch(OpCodes.Newobj),
+				new CodeMatch(OpCodes.Stfld)
+			).ThrowIfInvalid("Couldnt find Delay in StandardLevelFailedController")
+			.NamedMatch("delay").operand = Configuration.PluginConfig.Instance.SongFailDisplayTime;
+
+			return matcher.InstructionEnumeration();
 		}
 
-		static MethodBase TargetMethod() => Helper.getCoroutine(typeof(StandardLevelFailedController), nameof(StandardLevelFailedController.LevelFailedCoroutine));
-	}
-
-	[HarmonyPatch]
-	static class PatchMissionLevelFailedController {
-		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
-			if(!Helper.patchDelay(instructions.ElementAt(52), 2f, Configuration.PluginConfig.Instance.SongFailDisplayTime))
-				Plugin.Log.Warn("Failed to patch mission fail display time");
-
-			return instructions;
+		static IEnumerable<MethodBase> TargetMethods() {
+			yield return Helper.getCoroutine(typeof(StandardLevelFailedController), nameof(StandardLevelFailedController.LevelFailedCoroutine));
+			yield return Helper.getCoroutine(typeof(MissionLevelFailedController), nameof(MissionLevelFailedController.LevelFailedCoroutine));
 		}
 
-		static MethodBase TargetMethod() => Helper.getCoroutine(typeof(MissionLevelFailedController), nameof(MissionLevelFailedController.LevelFailedCoroutine));
+		static Exception Cleanup(MethodBase original, Exception ex) => Plugin.PatchFailed(original, ex);
 	}
 }

@@ -1,4 +1,6 @@
 ﻿using HarmonyLib;
+using System;
+using System.Reflection;
 
 namespace GottaGoFast.HarmonyPatches {
 
@@ -8,5 +10,6 @@ namespace GottaGoFast.HarmonyPatches {
 			if(Configuration.PluginConfig.Instance.RemoveHealthWarning)
 				goStraightToMenu = true;
 		}
+		static Exception Cleanup(MethodBase original, Exception ex) => Plugin.PatchFailed(original, ex);
 	}
 }

@@ -1,64 +1,66 @@
 ﻿using HarmonyLib;
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Diagnostics;
 using System.Reflection;
 using System.Reflection.Emit;
+using UnityEngine;
 
 namespace GottaGoFast.HarmonyPatches {
 	[HarmonyPatch]
 	static class PatchGameScenesManager {
 		public static bool skipGc = false;
 
-		const int UNLOAD_UNUSED_ASSETS = 408;
-		const int STFLD_STATE_7 = 413;
-
 		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator il) {
-			// 1.16.2+
-			if(!Helper.CheckIL(instructions, new Dictionary<int, OpCode>() {
-					{ UNLOAD_UNUSED_ASSETS, OpCodes.Call },
-					{ 409, OpCodes.Stloc_3 },
-					{ STFLD_STATE_7 + 1, OpCodes.Ldc_I4_7 },
-					{ 421, OpCodes.Stfld },
-					{ 422, OpCodes.Call },
-					{ 423, OpCodes.Ldc_I4_0 }
-				})) {
-				Plugin.Log.Warn("Couldn't patch GameScenesManager, unexpected existing OpCodes");
-				return instructions;
-			}
+			var match = new CodeMatcher(instructions, il);
 
-			var list = instructions.ToList();
+			match.End().MatchBack(
+				false,
+				new CodeMatch(OpCodes.Call, AccessTools.Method(typeof(GC), nameof(GC.Collect)), "GC Clear")
+			)
+			.ThrowIfInvalid("GC Clear not found")
+			.ThrowIfNotMatchForward(
+				"Expected RNG Init not found",
+				new CodeMatch(OpCodes.Ldc_I4_0),
+				new CodeMatch(OpCodes.Call, AccessTools.Method(typeof(UnityEngine.Random), nameof(UnityEngine.Random.InitState)))
+			).CreateLabel(out var GcCallLabel)
+			.Operand = AccessTools.Method(typeof(PatchGameScenesManager), nameof(__PostFix));
 
-			// Original GC call, replaced with our custom logic
-			list[422].operand = AccessTools.Method(typeof(PatchGameScenesManager), nameof(__PostFix));
+			match.End().MatchBack(
+				false,
+				new CodeMatch(OpCodes.Call, AccessTools.Method(typeof(Resources), nameof(Resources.UnloadUnusedAssets)), "UnloadCall")
+			// Check if Optimizations are enabled ..
+			).InsertAndAdvance(
+				match.Instruction.Clone(AccessTools.Method(typeof(PatchGameScenesManager), nameof(__IsEnabled))).MoveLabelsFrom(match.NamedMatch("UnloadCall"))
+			// ..If no, jump to the original UnloadUnusedAssets() call (Which will be below the following IL)
+			).InsertBranchAndAdvance(OpCodes.Brfalse, match.Pos);
 
+			if(Configuration.PluginConfig.Instance.OptimizationsAlternativeMode) {
+				Label exitLabel = new Label();
 
-			// Make sure it has a label
-			list[STFLD_STATE_7].labels.Add(new Label());
-
-			var unloadConditional = new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(PatchGameScenesManager), nameof(__IsEnabled))).MoveLabelsFrom(list[UNLOAD_UNUSED_ASSETS]);
-
-			// Re-Add a new label for original unload call to break to later
-			var unloadLabel = new Label();
-			list[UNLOAD_UNUSED_ASSETS].labels.Add(unloadLabel);
-
-			// Add a skip conditional for the original UnloadUnusedAssets() call
-			list.InsertRange(UNLOAD_UNUSED_ASSETS, new[] {
-					// Check if Optimizations are enabled
-					unloadConditional,
-					// If no, jump to the original UnloadUnusedAssets() call (Which will be below the following IL)
-					new CodeInstruction(OpCodes.Brfalse, unloadLabel),
-					// If yes, set the __current to null..
+				match.InsertAndAdvance(
 					new CodeInstruction(OpCodes.Ldarg_0),
 					new CodeInstruction(OpCodes.Ldnull),
-					new CodeInstruction(OpCodes.Stfld, list[412].operand),
-					// And jump to the IL where it sets the state to 7, which will then go to the exit of the coroutine next frame
-					new CodeInstruction(OpCodes.Br, list[STFLD_STATE_7].labels[0])
-				});
+					new CodeInstruction(OpCodes.Br, exitLabel)
+				).MatchForward(
+					true,
+					new CodeMatch(OpCodes.Ldarg_0),
+					new CodeMatch(),
+					new CodeMatch(OpCodes.Stfld, null, "__current setter"),
+					new CodeMatch(OpCodes.Ldarg_0)
+				).ThrowIfInvalid("Couldnt find __current set")
+				.NamedMatch("__current setter").labels.Add(exitLabel);
+			} else {
+				match.Insert(new CodeInstruction(OpCodes.Br, GcCallLabel));
+			}
 
-			Plugin.Log.Info("Patched GameScenesManager");
+			return match.InstructionEnumeration();
+		}
 
-			return list;
+		static Exception Cleanup(MethodBase original, Exception ex) {
+			if(original != null && ex != null)
+				Plugin.Log.Warn(string.Format("Patching {0} {1} failed: {2}", original.ReflectedType, original.Name, ex));
+			return null;
 		}
 
 		static MethodBase TargetMethod() => Helper.getCoroutine(typeof(GameScenesManager), nameof(GameScenesManager.ScenesTransitionCoroutine));
@@ -67,7 +69,13 @@ namespace GottaGoFast.HarmonyPatches {
 
 		public static bool isRestartingSong = false;
 
-		public static bool __IsEnabled() => Configuration.PluginConfig.Instance.EnableOptimizations;
+		public static bool __IsEnabled() {
+#if DEBUG
+			Plugin.Log.Info("__IsEnabled called");
+#endif
+
+			return Configuration.PluginConfig.Instance.EnableOptimizations;
+		}
 
 		public static void __PostFix() {
 			if(!__IsEnabled()) {

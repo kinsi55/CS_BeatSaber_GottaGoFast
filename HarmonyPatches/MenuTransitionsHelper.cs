@@ -1,7 +1,9 @@
 ﻿using HarmonyLib;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
 
 namespace GottaGoFast.HarmonyPatches {
 
@@ -10,83 +12,57 @@ namespace GottaGoFast.HarmonyPatches {
 	[HarmonyPatch]
 	static class PatchLevelStartTransition {
 		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
-			if(!Helper.patchDelay(instructions.ElementAt(32), 0.7f, Configuration.PluginConfig.Instance.SongStartTransition))
-				Plugin.Log.Info("Failed to patch map start transition time");
+			var matcher = new CodeMatcher(instructions);
 
-			return instructions;
+			matcher.End().MatchBack(
+				true,
+				new CodeMatch(OpCodes.Callvirt, AccessTools.Method(typeof(GameScenesManager), nameof(GameScenesManager.PushScenes)))
+			).ThrowIfInvalid("No PushScenes??")
+			.Advance(-10)
+			.MatchForward(false, new CodeMatch(OpCodes.Ldc_R4))
+			.Instruction.operand = Configuration.PluginConfig.Instance.SongStartTransition;
+
+			return matcher.InstructionEnumeration();
 		}
 
-		static MethodBase TargetMethod() => typeof(MenuTransitionsHelper).GetMethods().Where(x => x.Name == nameof(MenuTransitionsHelper.StartStandardLevel)).ElementAt(1);
+		static IEnumerable<MethodBase> TargetMethods() {
+			yield return typeof(MenuTransitionsHelper).GetMethods().Where(x => x.Name == nameof(MenuTransitionsHelper.StartStandardLevel)).ElementAt(1);
+			yield return AccessTools.Method(typeof(MenuTransitionsHelper), nameof(MenuTransitionsHelper.StartMissionLevel));
+		}
+
+		static Exception Cleanup(MethodBase original, Exception ex) {
+			if(original != null && ex != null)
+				Plugin.Log.Warn(string.Format("Patching {0} {1} failed: {2}", original.ReflectedType, original.Name, ex));
+			return null;
+		}
 	}
 
-	[HarmonyPatch(typeof(MenuTransitionsHelper), nameof(MenuTransitionsHelper.HandleMainGameSceneDidFinish))]
+	[HarmonyPatch(typeof(MenuTransitionsHelper))]
 	static class PatchLevelRestartTransition {
+		[HarmonyPatch(nameof(MenuTransitionsHelper.HandleMainGameSceneDidFinish))]
+		[HarmonyPatch(nameof(MenuTransitionsHelper.HandleMissionLevelSceneDidFinish))]
 		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
-			if(!Helper.patchDelay(instructions.ElementAt(29), 0.35f, Configuration.PluginConfig.Instance.SongRestartTransition))
-				Plugin.Log.Warn("Failed to patch map restart transition time");
-			if(!Helper.patchDelay(instructions.ElementAt(31), 1.3f, Configuration.PluginConfig.Instance.SongPassFailTransition))
-				Plugin.Log.Warn("Failed to patch map clear / fail transition time");
+			var matcher = new CodeMatcher(instructions);
 
-			return instructions;
+			matcher.End().MatchBack(
+				true,
+				new CodeMatch(OpCodes.Callvirt, AccessTools.Method(typeof(GameScenesManager), nameof(GameScenesManager.PopScenes)))
+			).ThrowIfInvalid("No PopScenes??")
+			.Advance(-10)
+			.MatchForward(
+				true,
+				new CodeMatch(x => x.opcode == OpCodes.Beq_S || x.opcode == OpCodes.Beq || x.opcode == OpCodes.Bne_Un || x.opcode == OpCodes.Bne_Un_S),
+				new CodeMatch(OpCodes.Ldc_R4, null, "restartdelay"),
+				new CodeMatch(x => x.opcode == OpCodes.Br || x.opcode == OpCodes.Br_S),
+				new CodeMatch(OpCodes.Ldc_R4, null, "failpassdelay")
+			).ThrowIfInvalid("!");
+
+			matcher.NamedMatch("restartdelay").operand = Configuration.PluginConfig.Instance.SongRestartTransition;
+			matcher.NamedMatch("failpassdelay").operand = Configuration.PluginConfig.Instance.SongPassFailTransition;
+
+			return matcher.InstructionEnumeration();
 		}
+
+		static Exception Cleanup(MethodBase original, Exception ex) => Plugin.PatchFailed(original, ex);
 	}
-
-	[HarmonyPatch(typeof(MenuTransitionsHelper), nameof(MenuTransitionsHelper.StartMissionLevel))]
-	static class PatchMissionStartTransition {
-		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
-			if(!Helper.patchDelay(instructions.ElementAt(31), 0.7f, Configuration.PluginConfig.Instance.SongStartTransition))
-				Plugin.Log.Warn("Failed to patch mission start transition time");
-
-			return instructions;
-		}
-	}
-
-	[HarmonyPatch(typeof(MenuTransitionsHelper), nameof(MenuTransitionsHelper.HandleMissionLevelSceneDidFinish))]
-	static class PatchMissionRestartTransition {
-		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
-			if(!Helper.patchDelay(instructions.ElementAt(25), 0.35f, Configuration.PluginConfig.Instance.SongRestartTransition))
-				Plugin.Log.Warn("Failed to patch mission restart transition time");
-			if(!Helper.patchDelay(instructions.ElementAt(27), 1.3f, Configuration.PluginConfig.Instance.SongPassFailTransition))
-				Plugin.Log.Warn("Failed to patch mission clear / fail transition time");
-
-			return instructions;
-		}
-	}
-
-	/*
-	 * I was experimenting before with restarts being ingame > credits > ingame instead of ingame > menu > ingame. 
-	 * Didnt help much as I was poking for the load times in the wrong place, might come in handy some time, idk
-	 */
-	//public virtual void StartStandardLevel(string gameMode, IDifficultyBeatmap difficultyBeatmap, OverrideEnvironmentSettings overrideEnvironmentSettings, ColorScheme overrideColorScheme, GameplayModifiers gameplayModifiers, PlayerSpecificSettings playerSpecificSettings, PracticeSettings practiceSettings, string backButtonText, bool useTestNoteCutSoundEffects, Action beforeSceneSwitchCallback, Action<DiContainer> afterSceneSwitchCallback, Action<StandardLevelScenesTransitionSetupDataSO, LevelCompletionResults> levelFinishedCallback) {
-	//	this._standardLevelFinishedCallback = levelFinishedCallback;
-	//	this._standardLevelScenesTransitionSetupData.didFinishEvent -= this.HandleMainGameSceneDidFinish;
-	//	this._standardLevelScenesTransitionSetupData.didFinishEvent += this.HandleMainGameSceneDidFinish;
-	//	this._standardLevelScenesTransitionSetupData.Init(gameMode, difficultyBeatmap, overrideEnvironmentSettings, overrideColorScheme, gameplayModifiers, playerSpecificSettings, practiceSettings, backButtonText, useTestNoteCutSoundEffects);
-	//	if(!this._gameScenesManager.IsSceneInStack("Credits")) {
-	//		Console.WriteLine("Didnt have credits! {0}", DateTimeOffset.Now.ToUnixTimeMilliseconds());
-	//		this._creditsScenesTransitionSetupData.Init();
-	//		this._gameScenesManager.PushScenes(this._creditsScenesTransitionSetupData, 0f, null, delegate (DiContainer container) {
-	//			Console.WriteLine("Credit setup post {0}", DateTimeOffset.Now.ToUnixTimeMilliseconds());
-	//			this._gameScenesManager.PushScenes(this._standardLevelScenesTransitionSetupData, 0.05f, beforeSceneSwitchCallback, afterSceneSwitchCallback);
-	//		});
-	//		return;
-	//	}
-	//	Console.WriteLine("Had credits! {0}", DateTimeOffset.Now.ToUnixTimeMilliseconds());
-	//	this._gameScenesManager.PushScenes(this._standardLevelScenesTransitionSetupData, 0.05f, beforeSceneSwitchCallback, afterSceneSwitchCallback);
-	//}
-
-	//public virtual void HandleMainGameSceneDidFinish(StandardLevelScenesTransitionSetupDataSO standardLevelScenesTransitionSetupData, LevelCompletionResults levelCompletionResults) {
-	//	standardLevelScenesTransitionSetupData.didFinishEvent -= this.HandleMainGameSceneDidFinish;
-	//	this._gameScenesManager.PopScenes((levelCompletionResults.levelEndStateType == LevelCompletionResults.LevelEndStateType.Failed || levelCompletionResults.levelEndStateType == LevelCompletionResults.LevelEndStateType.Cleared) ? 1.3f : 0.05f, null, delegate (DiContainer container) {
-	//		if(levelCompletionResults.levelEndAction != LevelCompletionResults.LevelEndAction.Restart) {
-	//			this._gameScenesManager.PopScenes(0f, null, null);
-	//		}
-	//		Action<StandardLevelScenesTransitionSetupDataSO, LevelCompletionResults> standardLevelFinishedCallback = this._standardLevelFinishedCallback;
-	//		if(standardLevelFinishedCallback == null) {
-	//			return;
-	//		}
-	//		standardLevelFinishedCallback(standardLevelScenesTransitionSetupData, levelCompletionResults);
-	//	});
-	//}
-
 }

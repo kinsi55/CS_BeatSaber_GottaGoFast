@@ -11,5 +11,6 @@ namespace GottaGoFast.HarmonyPatches {
 		}
 
 		static MethodBase TargetMethod() => AccessTools.Method(typeof(FadeInOutController), nameof(FadeInOutController.FadeIn), new Type[] { });
+		static Exception Cleanup(MethodBase original, Exception ex) => Plugin.PatchFailed(original, ex);
 	}
 }

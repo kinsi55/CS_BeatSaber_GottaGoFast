@@ -1,23 +1,12 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
+﻿using BeatSaberMarkupLanguage.Settings;
+using HarmonyLib;
 using IPA;
 using IPA.Config;
 using IPA.Config.Stores;
-using UnityEngine.SceneManagement;
-using UnityEngine;
-using IPALogger = IPA.Logging.Logger;
-
-using HarmonyLib;
+using System;
 using System.Reflection;
-using GottaGoFast.HarmonyPatches;
-using UnityEngine.Scripting;
-using System.Threading.Tasks;
-using System.Threading;
-using BeatSaberMarkupLanguage.Settings;
-using System.Runtime.CompilerServices;
-using UnityEngine.Rendering;
+using UnityEngine.SceneManagement;
+using IPALogger = IPA.Logging.Logger;
 
 namespace GottaGoFast {
 
@@ -38,7 +27,7 @@ namespace GottaGoFast {
 			Instance = this;
 			Log = logger;
 			Log.Info("Gotta Go Fast initialized.");
-			
+
 			Configuration.PluginConfig.Instance = conf.Generated<Configuration.PluginConfig>();
 			harmony = new Harmony("Kinsi55.BeatSaber.GottaGoFast");
 		}
@@ -60,7 +49,13 @@ namespace GottaGoFast {
 			BSMLSettings.instance.RemoveSettingsMenu(Configuration.PluginConfig.Instance);
 		}
 		#endregion
-		
+
+		internal static Exception PatchFailed(MethodBase method, Exception ex) {
+			if(method != null && ex != null)
+				Plugin.Log.Warn(string.Format("Patching {0} {1} failed: {2}", method.ReflectedType, method.Name, ex));
+			return null;
+		}
+
 		public static Scene currentScene;
 
 		public void OnActiveSceneChanged(Scene oldScene, Scene newScene) {
