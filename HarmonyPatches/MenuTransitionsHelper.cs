@@ -44,6 +44,15 @@ namespace GottaGoFast.HarmonyPatches {
 		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
 			var matcher = new CodeMatcher(instructions);
 
+			matcher.MatchForward(true,
+				new CodeMatch(OpCodes.Ldc_R4, null, "restartdelay"),
+				new CodeMatch(OpCodes.Ldnull),
+				new CodeMatch(OpCodes.Ldnull),
+				new CodeMatch(OpCodes.Callvirt, AccessTools.Method(typeof(GameScenesManager), nameof(GameScenesManager.ReplaceScenes)))
+			).ThrowIfInvalid("restartdelay not found");
+
+			matcher.NamedMatch("restartdelay").operand = Configuration.PluginConfig.Instance.SongRestartTransition;
+
 			matcher.End().MatchBack(
 				true,
 				new CodeMatch(OpCodes.Callvirt, AccessTools.Method(typeof(GameScenesManager), nameof(GameScenesManager.PopScenes)))
@@ -52,13 +61,14 @@ namespace GottaGoFast.HarmonyPatches {
 			.MatchForward(
 				true,
 				new CodeMatch(x => x.opcode == OpCodes.Beq_S || x.opcode == OpCodes.Beq || x.opcode == OpCodes.Bne_Un || x.opcode == OpCodes.Bne_Un_S),
-				new CodeMatch(OpCodes.Ldc_R4, null, "restartdelay"),
+				new CodeMatch(OpCodes.Ldc_R4, null, "exitdelay"),
 				new CodeMatch(x => x.opcode == OpCodes.Br || x.opcode == OpCodes.Br_S),
 				new CodeMatch(OpCodes.Ldc_R4, null, "failpassdelay")
 			).ThrowIfInvalid("!");
 
-			matcher.NamedMatch("restartdelay").operand = Configuration.PluginConfig.Instance.SongRestartTransition;
+			matcher.NamedMatch("exitdelay").operand = Configuration.PluginConfig.Instance.SongRestartTransition;
 			matcher.NamedMatch("failpassdelay").operand = Configuration.PluginConfig.Instance.SongPassFailTransition;
+
 
 			return matcher.InstructionEnumeration();
 		}
