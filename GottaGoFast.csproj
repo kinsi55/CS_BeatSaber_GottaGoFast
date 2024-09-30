@@ -133,7 +133,6 @@
     <Compile Include="HarmonyPatches\DefaultScenesTransitionsFromInit.cs" />
     <Compile Include="HarmonyPatches\FadeInOutController.cs" />
     <Compile Include="HarmonyPatches\GameScenesManager.cs" />
-    <Compile Include="HarmonyPatches\HookRestart.cs" />
     <Compile Include="HarmonyPatches\LevelFailController.cs" />
     <Compile Include="HarmonyPatches\MenuTransitionsHelper.cs" />
     <Compile Include="HarmonyPatches\NoSliderPrefabs.cs" />
