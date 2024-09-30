@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35222.181
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GottaGoFast", "GottaGoFast.csproj", "{FAEFC5B0-D788-4FF4-9995-4990085AA6A5}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FAEFC5B0-D788-4FF4-9995-4990085AA6A5}.Debug|x64.ActiveCfg = Debug|x64
+		{FAEFC5B0-D788-4FF4-9995-4990085AA6A5}.Debug|x64.Build.0 = Debug|x64
+		{FAEFC5B0-D788-4FF4-9995-4990085AA6A5}.Release|x64.ActiveCfg = Release|x64
+		{FAEFC5B0-D788-4FF4-9995-4990085AA6A5}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {EC06BEF8-21D6-4511-8F2A-58F043169F9D}
+	EndGlobalSection
+EndGlobal
