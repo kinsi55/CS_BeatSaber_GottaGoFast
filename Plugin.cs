@@ -20,12 +20,22 @@ namespace GottaGoFast {
 		static class BsmlWrapper {
 			static readonly bool hasBsml = IPA.Loader.PluginManager.GetPluginFromId("BeatSaberMarkupLanguage") != null;
 
+			public static void SetupUI() {
+				void wrap() => BeatSaberMarkupLanguage.Util.MainMenuAwaiter.MainMenuInitializing += delegate {
+					EnableUI();
+				};
+
+				if(hasBsml)
+					wrap();
+			}
+
 			public static void EnableUI() {
 				void wrap() => BSMLSettings.Instance.AddSettingsMenu("Gotta Go Fast", "GottaGoFast.Views.settings.bsml", Configuration.PluginConfig.Instance);
 
 				if(hasBsml)
 					wrap();
 			}
+
 			public static void DisableUI() {
 				void wrap() => BSMLSettings.Instance.RemoveSettingsMenu(Configuration.PluginConfig.Instance);
 
@@ -53,14 +63,10 @@ namespace GottaGoFast {
 		[OnEnable]
 		public void OnEnable() {
 			SceneManager.activeSceneChanged += OnActiveSceneChanged;
-			BeatSaberMarkupLanguage.Util.MainMenuAwaiter.MainMenuInitializing += MainMenuInit;
 			harmony.PatchAll(Assembly.GetExecutingAssembly());
-		}
 
-		public void MainMenuInit()
-		{
-            BsmlWrapper.EnableUI();
-        }
+			BsmlWrapper.SetupUI();
+		}
 
         [OnDisable]
 		public void OnDisable() {
