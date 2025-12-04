@@ -4,11 +4,13 @@ using System.Reflection;
 
 namespace GottaGoFast.HarmonyPatches {
 
-	[HarmonyPatch(typeof(DefaultScenesTransitionsFromInit), nameof(DefaultScenesTransitionsFromInit.TransitionToNextScene))]
+	[HarmonyPatch(typeof(HealthWarningScenesTransitionSetupDataSO), nameof(HealthWarningScenesTransitionSetupDataSO.Init))]
 	static class PatchHealthWarning {
-		static void Prefix(ref bool goStraightToMenu) {
+		static void Prefix(ref HealthWarningSceneSetupData healthWarningSceneSetupData) {
 			if(Configuration.PluginConfig.Instance.RemoveHealthWarning)
-				goStraightToMenu = true;
+			{
+                healthWarningSceneSetupData.taskCompletionSource.SetResult(true);
+            }
 		}
 		static Exception Cleanup(MethodBase original, Exception ex) => Plugin.PatchFailed(original, ex);
 	}
