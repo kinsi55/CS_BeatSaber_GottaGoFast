@@ -130,7 +130,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="HarmonyPatches\DefaultScenesTransitionsFromInit.cs" />
     <Compile Include="HarmonyPatches\FadeInOutController.cs" />
     <Compile Include="HarmonyPatches\GameScenesManager.cs" />
     <Compile Include="HarmonyPatches\LevelFailController.cs" />
